@@ -40,7 +40,11 @@ enum AiJobStatus {
 
 model User {
   id          String            @id @default(cuid())
-  openid      String            @unique
+  openid      String?           @unique
+  email       String?           @unique
+  passwordHash String?          @map("password_hash")
+  authProvider String           @default("WECHAT") @map("auth_provider")
+  fieldOfStudy String?          @map("field_of_study")
   nickname    String?
   avatarUrl   String?           @map("avatar_url")
   createdAt   DateTime          @default(now()) @map("created_at")

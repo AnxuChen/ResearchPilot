@@ -32,7 +32,11 @@
     <text class="label">Full Name</text>
     <view class="input-box">
       <text class="icon">👤</text>
-      <input placeholder="e.g. Marie Curie" />
+      <input
+        value="{{fullName}}"
+        bindinput="onInputFullName"
+        placeholder="e.g. Marie Curie"
+      />
     </view>
   </view>
 
@@ -40,7 +44,11 @@
     <text class="label">Academic Email</text>
     <view class="input-box">
       <text class="icon">✉️</text>
-      <input placeholder="name@university.edu" />
+      <input
+        value="{{email}}"
+        bindinput="onInputEmail"
+        placeholder="name@university.edu"
+      />
     </view>
   </view>
 
@@ -48,7 +56,11 @@
     <text class="label">Field of Study</text>
     <view class="input-box">
       <text class="icon">🔬</text>
-      <input placeholder="e.g. Neuroscience" />
+      <input
+        value="{{fieldOfStudy}}"
+        bindinput="onInputFieldOfStudy"
+        placeholder="e.g. Neuroscience"
+      />
     </view>
   </view>
 
@@ -56,7 +68,12 @@
     <text class="label">Password</text>
     <view class="input-box">
       <text class="icon">🔒</text>
-      <input password placeholder="Create a strong password" />
+      <input
+        value="{{password}}"
+        bindinput="onInputPassword"
+        password
+        placeholder="Create a strong password (>=8)"
+      />
     </view>
   </view>
 

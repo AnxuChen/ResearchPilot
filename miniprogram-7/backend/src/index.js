@@ -19,6 +19,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const PAPER_ACTION_TYPES = new Set(["PASS", "MARK", "READ"]);
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function parsePositiveInt(value, fallback, max = 100) {
   const parsed = Number.parseInt(String(value ?? ""), 10);
@@ -29,6 +30,42 @@ function parsePositiveInt(value, fallback, max = 100) {
 function normalizeKeywords(value) {
   if (typeof value !== "string") return "";
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeEmail(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase();
+}
+
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const digest = crypto.scryptSync(password, salt, 64).toString("hex");
+  return `scrypt$${salt}$${digest}`;
+}
+
+function buildAuthToken(user) {
+  return jwt.sign(
+    {
+      sub: user.id,
+      openid: user.openid || undefined,
+      email: user.email || undefined,
+    },
+    jwtSecret,
+    { expiresIn: "7d" }
+  );
+}
+
+function buildUserPayload(user) {
+  return {
+    id: user.id,
+    openid: user.openid || null,
+    email: user.email || null,
+    nickname: user.nickname,
+    avatarUrl: user.avatar_url,
+    authProvider: user.auth_provider || null,
+    fieldOfStudy: user.field_of_study || null,
+  };
 }
 
 function buildPublishedAt(publicationDate, year) {
@@ -313,7 +350,16 @@ function getBearerToken(authHeader = "") {
 async function getUserById(userId) {
   const result = await pool.query(
     `
-      SELECT id, openid, nickname, avatar_url, created_at, updated_at
+      SELECT
+        id,
+        openid,
+        email,
+        nickname,
+        avatar_url,
+        auth_provider,
+        field_of_study,
+        created_at,
+        updated_at
       FROM users
       WHERE id = $1
       LIMIT 1;
@@ -379,13 +425,23 @@ async function fetchWeChatSession(code) {
 
 async function upsertUserByOpenId({ openid, nickname, avatarUrl }) {
   const sql = `
-    INSERT INTO users (id, openid, nickname, avatar_url)
-    VALUES ($1, $2, $3, $4)
+    INSERT INTO users (id, openid, nickname, avatar_url, auth_provider)
+    VALUES ($1, $2, $3, $4, 'WECHAT')
     ON CONFLICT (openid) DO UPDATE
       SET nickname = COALESCE(EXCLUDED.nickname, users.nickname),
           avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
+          auth_provider = 'WECHAT',
           updated_at = NOW()
-    RETURNING id, openid, nickname, avatar_url, created_at, updated_at;
+    RETURNING
+      id,
+      openid,
+      email,
+      nickname,
+      avatar_url,
+      auth_provider,
+      field_of_study,
+      created_at,
+      updated_at;
   `;
   const values = [crypto.randomUUID(), openid, nickname ?? null, avatarUrl ?? null];
   const result = await pool.query(sql, values);
@@ -426,25 +482,13 @@ app.post("/auth/wx-login", async (req, res) => {
       avatarUrl,
     });
 
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        openid: user.openid,
-      },
-      jwtSecret,
-      { expiresIn: "7d" }
-    );
+    const token = buildAuthToken(user);
 
     return res.status(200).json({
       token,
       tokenType: "Bearer",
       expiresIn: 7 * 24 * 60 * 60,
-      user: {
-        id: user.id,
-        openid: user.openid,
-        nickname: user.nickname,
-        avatarUrl: user.avatar_url,
-      },
+      user: buildUserPayload(user),
     });
   } catch (err) {
     const msg = String(err?.message || err);
@@ -457,13 +501,85 @@ app.post("/auth/wx-login", async (req, res) => {
   }
 });
 
+app.post("/auth/email-register", async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      fullName = null,
+      fieldOfStudy = null,
+    } = req.body || {};
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+      return res.status(400).json({ message: "invalid_email" });
+    }
+    if (!password || typeof password !== "string" || password.length < 8) {
+      return res.status(400).json({ message: "password_too_short" });
+    }
+
+    const passwordHash = hashPassword(password);
+    const insertResult = await pool.query(
+      `
+        INSERT INTO users (
+          id,
+          email,
+          password_hash,
+          nickname,
+          field_of_study,
+          auth_provider
+        )
+        VALUES ($1, $2, $3, $4, $5, 'EMAIL')
+        ON CONFLICT (email) DO NOTHING
+        RETURNING
+          id,
+          openid,
+          email,
+          nickname,
+          avatar_url,
+          auth_provider,
+          field_of_study,
+          created_at,
+          updated_at;
+      `,
+      [
+        crypto.randomUUID(),
+        normalizedEmail,
+        passwordHash,
+        fullName ? String(fullName).trim() || null : null,
+        fieldOfStudy ? String(fieldOfStudy).trim() || null : null,
+      ]
+    );
+    const user = insertResult.rows[0];
+    if (!user) {
+      return res.status(409).json({ message: "email_already_registered" });
+    }
+
+    const token = buildAuthToken(user);
+    return res.status(200).json({
+      token,
+      tokenType: "Bearer",
+      expiresIn: 7 * 24 * 60 * 60,
+      user: buildUserPayload(user),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "email_register_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
 app.get("/users/me", authMiddleware, async (req, res) => {
   const user = req.currentUser;
   return res.status(200).json({
     id: user.id,
-    openid: user.openid,
-    nickname: user.nickname,
-    avatarUrl: user.avatar_url,
+    openid: user.openid || null,
+    email: user.email || null,
+    nickname: user.nickname || null,
+    avatarUrl: user.avatar_url || null,
+    authProvider: user.auth_provider || null,
+    fieldOfStudy: user.field_of_study || null,
     createdAt: user.created_at,
     updatedAt: user.updated_at,
   });
