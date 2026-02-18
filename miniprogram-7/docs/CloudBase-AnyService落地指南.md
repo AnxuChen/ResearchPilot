@@ -70,9 +70,24 @@ const runtimeConfig = {
     - `http://111.229.204.242:8081/healthz` 是否可访问
     - CloudBase 控制台里的目标端口/健康检查路径是否正确
     - 服务器安全组是否放行对应端口
+- `cloud.callContainer:fail ... code: 102002`
+  - 典型是长耗时请求被网关超时中断（常见于大文件审稿）。
+  - 处理方式：
+    - 不要在一次 `callContainer` 内等待完整审稿结果。
+    - 改为异步任务：`POST /lab/review-simulator/tasks` + `GET /lab/review-simulator/tasks/:taskId` 轮询。
+    - 小程序 `Review Simulator` 页面已切换到异步任务模式。
 
 ## 7. 交付建议（这周）
 
 1. 本周演示阶段固定使用 `cloudbase-anyservice` 模式。
 2. 作业提交后再并行推进备案 + `https` 正式域名。
 3. 备案完成后，可把 `apiMode` 切回 `direct-http`（改成正式 `https` 域名）。
+
+## 8. Review Simulator 专项说明
+
+- 文件上传建议走“云存储临时链接”模式，不走大 JSON base64 直传。
+- 当前前端流程：
+  - `wx.cloud.uploadFile` 上传稿件
+  - `wx.cloud.getTempFileURL` 获取临时链接
+  - 调 `POST /lab/review-simulator/tasks` 创建任务
+  - 轮询 `GET /lab/review-simulator/tasks/:taskId` 获取结果

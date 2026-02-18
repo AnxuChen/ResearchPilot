@@ -2,6 +2,8 @@
 
 微信小程序 + Node.js 后端 + PostgreSQL 的论文探索工具。
 
+![Research Pilot Tease](docs/img/tease.png)
+
 ## 项目结构
 
 - `miniprogram/`：微信小程序前端
@@ -20,6 +22,16 @@
 - 小程序到后端链路：
   - 开发调试可用 `direct-http`
   - 预览/体验可用 CloudBase AnyService（已接入）
+
+## 核心功能
+
+- 邮箱注册/登录 + 微信登录
+- 微信首次登录资料完善（昵称/头像）
+- 论文推荐流（Semantic Scholar）与论文详情页
+- `Review Simulator`：
+  - 上传 `PDF/TXT/MD` 稿件（上限 50MB）
+  - AI 审稿意见、`ACCEPT/REJECT`、评分
+  - 异步任务模式（避免 AnyService 长请求超时）
 
 ## 本地与服务器启动
 
@@ -50,14 +62,14 @@ curl http://127.0.0.1:8081/healthz
   - `apiMode: "direct-http"`
   - `apiBaseUrl: "http://<ip>:<port>"`
 
-## 已实现核心能力
+## Review Simulator 配置说明
 
-- 邮箱注册与邮箱登录
-- 微信登录（`/auth/wx-login`）
-- 微信登录后资料完善页（昵称/头像）
-- 论文推荐流（Semantic Scholar）
-- 论文详情真实数据展示
-- 用户资料持久化到 PostgreSQL
+- 相关环境变量在服务器 `deploy/.env`：
+  - `LLM_API_KEY`
+  - `LLM_BASE_URL`（示例：`https://api-inference.modelscope.cn`）
+  - `REVIEW_MODEL_NAME`（默认：`deepseek-ai/DeepSeek-V3.2`）
+- 后端实际请求会自动拼接为 OpenAI 兼容端点：
+  - `<LLM_BASE_URL>/v1/chat/completions`
 
 ## 关键文档
 
@@ -70,3 +82,4 @@ curl http://127.0.0.1:8081/healthz
 - 预览能进首页但登录失败：优先检查 AnyService 配置和 `runtime.js`
 - `INVALID_HOST`：检查 AnyService 源站连接信息是否为 `host:port` 且服务标识一致
 - 微信登录重复要求完善资料：检查数据库是否保存了昵称和头像
+- `cloud.callContainer:fail code 102002`：改用异步任务接口（当前已实现），避免长请求超时
