@@ -71,70 +71,94 @@ Page({
       return;
     }
 
-    this.setData({ isLoading: true });
-    wx.login({
-      success: (loginRes) => {
-        if (!loginRes.code) {
-          wx.showToast({ title: "获取登录码失败", icon: "none" });
-          this.setData({ isLoading: false });
-          return;
-        }
+    const doWxLogin = (wechatProfile = {}) => {
+      wx.login({
+        success: (loginRes) => {
+          if (!loginRes.code) {
+            wx.showToast({ title: "获取登录码失败", icon: "none" });
+            this.setData({ isLoading: false });
+            return;
+          }
 
-        const sendLoginRequest = (retryTimes = 0) => {
-          let willRetry = false;
-          wx.request({
-            url: `${baseUrl}/auth/wx-login`,
-            method: "POST",
-            timeout: 12000,
-            header: {
-              "Content-Type": "application/json",
-            },
-            data: {
-              code: loginRes.code,
-            },
-            success: (res) => {
-              if (res.statusCode === 200 && res.data && res.data.token) {
-                this.saveAuthAndJump(res.data);
-                return;
-              }
+          const sendLoginRequest = (retryTimes = 0) => {
+            let willRetry = false;
+            wx.request({
+              url: `${baseUrl}/auth/wx-login`,
+              method: "POST",
+              timeout: 12000,
+              header: {
+                "Content-Type": "application/json",
+              },
+              data: {
+                code: loginRes.code,
+                nickname: wechatProfile.nickname || null,
+                avatarUrl: wechatProfile.avatarUrl || null,
+              },
+              success: (res) => {
+                if (res.statusCode === 200 && res.data && res.data.token) {
+                  this.saveAuthAndJump(res.data);
+                  return;
+                }
 
-              if (res.statusCode === 502 && retryTimes < 1) {
-                willRetry = true;
-                setTimeout(() => sendLoginRequest(retryTimes + 1), 800);
-                return;
-              }
+                if (res.statusCode === 502 && retryTimes < 1) {
+                  willRetry = true;
+                  setTimeout(() => sendLoginRequest(retryTimes + 1), 800);
+                  return;
+                }
 
-              const msg =
-                (res.data && res.data.message) || `微信登录失败(${res.statusCode})`;
-              wx.showToast({
-                title: msg,
-                icon: "none",
-              });
-            },
-            fail: (err) => {
-              console.error("请求微信登录接口失败", err);
-              wx.showToast({
-                title: "网络异常，请稍后重试",
-                icon: "none",
-              });
-            },
-            complete: () => {
-              if (!willRetry) {
-                this.setData({ isLoading: false });
-              }
-            },
+                const msg =
+                  (res.data && res.data.message) || `微信登录失败(${res.statusCode})`;
+                wx.showToast({
+                  title: msg,
+                  icon: "none",
+                });
+              },
+              fail: (err) => {
+                console.error("请求微信登录接口失败", err);
+                wx.showToast({
+                  title: "网络异常，请稍后重试",
+                  icon: "none",
+                });
+              },
+              complete: () => {
+                if (!willRetry) {
+                  this.setData({ isLoading: false });
+                }
+              },
+            });
+          };
+
+          sendLoginRequest(0);
+        },
+        fail: (err) => {
+          console.error("wx.login 调用失败", err);
+          wx.showToast({
+            title: "微信登录失败",
+            icon: "none",
           });
-        };
+          this.setData({ isLoading: false });
+        },
+      });
+    };
 
-        sendLoginRequest(0);
+    this.setData({ isLoading: true });
+    if (typeof wx.getUserProfile !== "function") {
+      doWxLogin({});
+      return;
+    }
+
+    wx.getUserProfile({
+      desc: "用于完善用户资料",
+      success: (res) => {
+        const userInfo = (res && res.userInfo) || {};
+        doWxLogin({
+          nickname: userInfo.nickName || null,
+          avatarUrl: userInfo.avatarUrl || null,
+        });
       },
       fail: (err) => {
-        console.error("wx.login 调用失败", err);
-        wx.showToast({
-          title: "微信登录失败",
-          icon: "none",
-        });
-        this.setData({ isLoading: false });
+        console.warn("wx.getUserProfile 调用失败，继续执行微信登录", err);
+        doWxLogin({});
       },
     });
   },

@@ -73,7 +73,9 @@
   <text class="other-text">Or continue with</text>
   <view class="icons">
     <view class="icon">G</view>
-    <view class="icon" bindtap="onWxSignIn">W</view>
+    <view class="icon" bindtap="onWxSignIn">
+      <image class="wx-icon-img" src="/images/weixin.png" mode="aspectFit"></image>
+    </view>
   </view>
 </view>
 

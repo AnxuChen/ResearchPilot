@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { Pool } from "pg";
 
 const app = express();
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "5mb" }));
 
 const port = Number(process.env.PORT || 3000);
 const jwtSecret = process.env.JWT_SECRET || "change_this_jwt_secret";
@@ -79,6 +79,12 @@ function buildUserPayload(user) {
     authProvider: user.auth_provider || null,
     fieldOfStudy: user.field_of_study || null,
   };
+}
+
+function isAllowedAvatarUrl(value) {
+  if (!value || typeof value !== "string") return false;
+  if (value.startsWith("http://") || value.startsWith("https://")) return true;
+  return /^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(value);
 }
 
 function buildPublishedAt(publicationDate, year) {
@@ -460,12 +466,32 @@ async function fetchWeChatSession(code) {
 }
 
 async function upsertUserByOpenId({ openid, nickname, avatarUrl }) {
+  const normalizedNickname =
+    typeof nickname === "string"
+      ? nickname.trim() && nickname.trim() !== "微信用户"
+        ? nickname.trim()
+        : null
+      : null;
+  const normalizedAvatarUrl =
+    typeof avatarUrl === "string" && avatarUrl.trim() ? avatarUrl.trim() : null;
+
   const sql = `
     INSERT INTO users (id, openid, nickname, avatar_url, auth_provider)
     VALUES ($1, $2, $3, $4, 'WECHAT')
     ON CONFLICT (openid) DO UPDATE
-      SET nickname = COALESCE(EXCLUDED.nickname, users.nickname),
-          avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
+      SET nickname = CASE
+            WHEN users.nickname IS NULL
+              OR users.nickname = ''
+              OR users.nickname = '微信用户'
+            THEN COALESCE(EXCLUDED.nickname, users.nickname)
+            ELSE users.nickname
+          END,
+          avatar_url = CASE
+            WHEN users.avatar_url IS NULL
+              OR users.avatar_url = ''
+            THEN COALESCE(EXCLUDED.avatar_url, users.avatar_url)
+            ELSE users.avatar_url
+          END,
           auth_provider = 'WECHAT',
           updated_at = NOW()
     RETURNING
@@ -479,7 +505,12 @@ async function upsertUserByOpenId({ openid, nickname, avatarUrl }) {
       created_at,
       updated_at;
   `;
-  const values = [crypto.randomUUID(), openid, nickname ?? null, avatarUrl ?? null];
+  const values = [
+    crypto.randomUUID(),
+    openid,
+    normalizedNickname,
+    normalizedAvatarUrl,
+  ];
   const result = await pool.query(sql, values);
   return result.rows[0];
 }
@@ -636,6 +667,60 @@ app.post("/auth/email-login", async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "email_login_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.put("/users/me/profile", authMiddleware, async (req, res) => {
+  try {
+    const nicknameRaw = req.body?.nickname;
+    const avatarUrlRaw = req.body?.avatarUrl;
+
+    const nickname =
+      typeof nicknameRaw === "string" ? nicknameRaw.trim().slice(0, 32) : null;
+    const avatarUrl =
+      typeof avatarUrlRaw === "string" ? avatarUrlRaw.trim() : null;
+
+    if (!nickname || nickname.length < 1) {
+      return res.status(400).json({ message: "invalid_nickname" });
+    }
+    if (avatarUrl && !isAllowedAvatarUrl(avatarUrl)) {
+      return res.status(400).json({ message: "invalid_avatar_url" });
+    }
+
+    const result = await pool.query(
+      `
+        UPDATE users
+        SET
+          nickname = $2,
+          avatar_url = COALESCE($3, avatar_url),
+          updated_at = NOW()
+        WHERE id = $1
+        RETURNING
+          id,
+          openid,
+          email,
+          nickname,
+          avatar_url,
+          auth_provider,
+          field_of_study,
+          created_at,
+          updated_at;
+      `,
+      [req.auth.userId, nickname, avatarUrl]
+    );
+    const user = result.rows[0];
+    if (!user) {
+      return res.status(404).json({ message: "user_not_found" });
+    }
+
+    return res.status(200).json({
+      user: buildUserPayload(user),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "update_profile_failed",
       detail: String(err?.message || err),
     });
   }
