@@ -37,6 +37,8 @@
 
   <view class="input-box">
     <input
+      value="{{email}}"
+      bindinput="onInputEmail"
       placeholder="Academic Email"
       placeholder-class="placeholder"
     />
@@ -44,6 +46,8 @@
 
   <view class="input-box">
     <input
+      value="{{password}}"
+      bindinput="onInputPassword"
       password
       placeholder="Password"
       placeholder-class="placeholder"
@@ -69,7 +73,7 @@
   <text class="other-text">Or continue with</text>
   <view class="icons">
     <view class="icon">G</view>
-    <view class="icon">W</view>
+    <view class="icon" bindtap="onWxSignIn">W</view>
   </view>
 </view>
 

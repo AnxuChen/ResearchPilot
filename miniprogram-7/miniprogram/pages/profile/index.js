@@ -1,66 +1,66 @@
 // pages/profile/index.js
+const { request } = require("../../utils/request");
+
+function buildDisplayName(user) {
+  const nickname = (user && user.nickname ? String(user.nickname).trim() : "") || "";
+  if (nickname) return nickname;
+  const email = (user && user.email ? String(user.email).trim() : "") || "";
+  if (email && email.includes("@")) return email.split("@")[0];
+  return "User";
+}
+
+function buildBio(user) {
+  const fieldOfStudy =
+    (user && user.fieldOfStudy ? String(user.fieldOfStudy).trim() : "") || "";
+  if (fieldOfStudy) return fieldOfStudy;
+  return "Design-minded academic explorer";
+}
+
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
-
+    userName: "User",
+    userBio: "Design-minded academic explorer",
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad(options) {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
   onShow() {
-
+    this.syncProfile();
   },
 
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload() {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
   onPullDownRefresh() {
-
+    this.syncProfile({ stopPullDown: true });
   },
 
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
+  async syncProfile(options = {}) {
+    try {
+      const user = await request({
+        url: "/users/me",
+        method: "GET",
+        auth: true,
+      });
+      this.setData({
+        userName: buildDisplayName(user),
+        userBio: buildBio(user),
+      });
+      wx.setStorageSync("user", user || {});
+    } catch (err) {
+      if (err.statusCode === 401 || err.message === "missing_token") {
+        wx.removeStorageSync("token");
+        wx.removeStorageSync("user");
+        wx.reLaunch({
+          url: "/pages/login/login",
+        });
+        return;
+      }
 
+      const cachedUser = wx.getStorageSync("user") || {};
+      this.setData({
+        userName: buildDisplayName(cachedUser),
+        userBio: buildBio(cachedUser),
+      });
+    } finally {
+      if (options.stopPullDown) {
+        wx.stopPullDownRefresh();
+      }
+    }
   },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
-  }
-})
+});

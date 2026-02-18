@@ -44,6 +44,19 @@ function hashPassword(password) {
   return `scrypt$${salt}$${digest}`;
 }
 
+function verifyPassword(password, storedHash) {
+  if (!storedHash || typeof storedHash !== "string") return false;
+  const parts = storedHash.split("$");
+  if (parts.length !== 3 || parts[0] !== "scrypt") return false;
+  const [, salt, storedDigestHex] = parts;
+  if (!salt || !storedDigestHex) return false;
+  const derivedHex = crypto.scryptSync(password, salt, 64).toString("hex");
+  const storedBuffer = Buffer.from(storedDigestHex, "hex");
+  const derivedBuffer = Buffer.from(derivedHex, "hex");
+  if (storedBuffer.length !== derivedBuffer.length) return false;
+  return crypto.timingSafeEqual(storedBuffer, derivedBuffer);
+}
+
 function buildAuthToken(user) {
   return jwt.sign(
     {
@@ -369,6 +382,29 @@ async function getUserById(userId) {
   return result.rows[0] || null;
 }
 
+async function getUserByEmail(email) {
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        openid,
+        email,
+        password_hash,
+        nickname,
+        avatar_url,
+        auth_provider,
+        field_of_study,
+        created_at,
+        updated_at
+      FROM users
+      WHERE email = $1
+      LIMIT 1;
+    `,
+    [email]
+  );
+  return result.rows[0] || null;
+}
+
 async function authMiddleware(req, res, next) {
   try {
     const token = getBearerToken(req.headers.authorization);
@@ -565,6 +601,41 @@ app.post("/auth/email-register", async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "email_register_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.post("/auth/email-login", async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !EMAIL_REGEX.test(normalizedEmail)) {
+      return res.status(400).json({ message: "invalid_email" });
+    }
+    if (!password || typeof password !== "string") {
+      return res.status(400).json({ message: "missing_password" });
+    }
+
+    const user = await getUserByEmail(normalizedEmail);
+    if (!user || !user.password_hash) {
+      return res.status(401).json({ message: "invalid_credentials" });
+    }
+    if (!verifyPassword(password, user.password_hash)) {
+      return res.status(401).json({ message: "invalid_credentials" });
+    }
+
+    const token = buildAuthToken(user);
+    return res.status(200).json({
+      token,
+      tokenType: "Bearer",
+      expiresIn: 7 * 24 * 60 * 60,
+      user: buildUserPayload(user),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "email_login_failed",
       detail: String(err?.message || err),
     });
   }

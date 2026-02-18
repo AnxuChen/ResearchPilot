@@ -17,8 +17,8 @@
         <text class="badge-text">Night Owl</text>
       </view>
     </view>
-    <text class="user-name">Dr. UserName</text>
-    <text class="user-bio">Design-minded academic explorer</text>
+    <text class="user-name">{{userName}}</text>
+    <text class="user-bio">{{userBio}}</text>
   </view>
 
   <view class="stats-grid">
