@@ -8,8 +8,7 @@
 <!-- LOGO -->
 <view class="logo-area">
   <view class="logo-card">
-    <text class="icon">⚗️</text>
-
+    <image class="icon-img" src="/images/login/logo.png" mode="aspectFit"></image>
     <view class="dot yellow"></view>
     <view class="dot teal"></view>
   </view>
@@ -22,8 +21,12 @@
 
 <!-- 标题 -->
 <view class="title">
-  <text class="line">Start Your</text>
-  <text class="line gradient">Research Journey</text>
+  <view>
+    <text class="line">Start Your</text>
+  </view>
+  <view>
+    <text class="line gradient">Research Journey</text>
+  </view>
 </view>
 
 <!-- 副标题 -->
@@ -72,7 +75,6 @@
 <view class="other">
   <text class="other-text">Or continue with</text>
   <view class="icons">
-    <view class="icon">G</view>
     <view class="icon" bindtap="onWxSignIn">
       <image class="wx-icon-img" src="/images/weixin.png" mode="aspectFit"></image>
     </view>
