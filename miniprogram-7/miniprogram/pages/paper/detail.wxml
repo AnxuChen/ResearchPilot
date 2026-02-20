@@ -1,51 +1,58 @@
 <view class="container">
-  <view wx:if="{{isLoading}}" class="state-text">正在加载论文详情...</view>
-  <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
-
-  <view wx:elif="{{paper}}" class="paper-wrap">
-    <view class="badge-row">
-      <text class="badge">PAPER DETAIL</text>
-      <text class="date-text">{{paper.publishedText}}</text>
+  <view class="content-body" wx:if="{{paper}}">
+    <view class="tag-header">
+      <view 
+        wx:for="{{paper.tags}}" 
+        wx:key="index" 
+        class="top-badge tag-color-{{index % 4}}"
+      >{{item}}</view>
+      <text class="date-text">{{paper.publishedText || '2026-02-19'}}</text>
     </view>
 
-    <view class="title">{{paper.title}}</view>
+    <view class="main-title">{{paper.title}}</view>
 
-    <view class="meta-row">
-      <view class="meta-item" wx:if="{{paper.year}}">
-        <text class="meta-label">Year</text>
-        <text class="meta-value">{{paper.year}}</text>
+    <view class="author-section">
+      <view class="avatar-group">
+        <view class="avatar-circle avt-1"></view>
+        <view class="avatar-circle avt-2"></view>
       </view>
-      <view class="meta-item">
-        <text class="meta-label">Citations</text>
-        <text class="meta-value">{{paper.citationCount}}</text>
-      </view>
-      <view class="meta-item" wx:if="{{paper.venue}}">
-        <text class="meta-label">Venue</text>
-        <text class="meta-value venue">{{paper.venue}}</text>
+      <view class="author-info">
+        <text class="author-name">{{paper.authorsText}}</text>
+        <text class="author-role">PRIMARY AUTHORS</text>
       </view>
     </view>
 
-    <view class="card">
-      <view class="card-title">Authors</view>
-      <view class="card-content">{{paper.authorsText}}</view>
+    <view class="abstract-card">
+      <view class="quote-icon">"</view>
+      <view class="card-label">Abstract</view>
+      <view class="abstract-text">{{paper.abstract}}</view>
     </view>
 
-    <view class="card">
-      <view class="card-title">Abstract</view>
-      <view class="card-content">{{paper.abstract}}</view>
+    <view class="section-header">
+      <text>Paper Insights</text>
     </view>
 
-    <view class="card" wx:if="{{paper.link}}">
-      <view class="card-title">Link</view>
-      <view class="link-text">{{paper.link}}</view>
-      <view class="action-row">
-        <button class="action-btn" bindtap="onCopyLink">复制链接</button>
-        <button class="action-btn action-btn-dark" bindtap="onOpenLink">打开提示</button>
+    <view class="insight-card">
+      <view class="insight-icon icon-yellow"></view>
+      <view class="insight-content">
+        <text class="insight-title">Citations</text>
+        <text class="insight-desc">{{paper.citationCount}} total citations</text>
       </view>
     </view>
 
-    <view class="tag-row" wx:if="{{paper.tags.length}}">
-      <view class="tag" wx:for="{{paper.tags}}" wx:key="index">{{item}}</view>
+    <view class="insight-card">
+      <view class="insight-icon icon-red"></view>
+      <view class="insight-content">
+        <text class="insight-title">Publication Venue</text>
+        <text class="insight-desc">{{paper.venue || 'ArXiv / Conference'}}</text>
+      </view>
     </view>
+
+    <view class="footer-spacer"></view>
+  </view>
+
+  <view class="floating-bar">
+    <button class="action-btn btn-light" bindtap="onCopyLink">复制链接</button>
+    <button class="action-btn btn-dark" bindtap="onOpenLink">打开提示</button>
   </view>
 </view>

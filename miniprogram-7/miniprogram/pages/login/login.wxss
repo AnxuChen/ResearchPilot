@@ -227,4 +227,10 @@
     width: 48rpx;
     height: 48rpx;
   }
+
+  .icon-img {
+    /* 实际开发中移除背景色，这里为了演示位置 */
+    width: 80%;
+    height: 80%;
+  }
   

@@ -112,10 +112,12 @@ page {
     color: white;
   }
   
-  /* --- 内容网格 --- */
-  .discovery-grid {
+/* --- 内容网格 --- */
+.discovery-grid {
     display: flex;
     gap: 24rpx;
+    width: 100%; /* 确保网格容器占满剩余空间 */
+    box-sizing: border-box;
   }
   
   .grid-column {
@@ -123,6 +125,7 @@ page {
     display: flex;
     flex-direction: column;
     gap: 24rpx;
+    min-width: 0; /* 【关键所在】防止内容把 Flex 容器撑出屏幕 */
   }
   
   .card {
@@ -130,6 +133,14 @@ page {
     border-radius: 40rpx;
     box-shadow: 0 10rpx 30rpx rgba(0,0,0,0.05);
     overflow: hidden;
+    width: 100%;
+    box-sizing: border-box; /* 确保 padding 不会额外增加卡片宽度 */
+  }
+  
+  .card-content {
+    padding: 24rpx;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   .card-image {
@@ -148,9 +159,6 @@ page {
   
   .inner-icon { font-size: 60rpx; opacity: 0.6; }
   
-  .card-content {
-    padding: 24rpx;
-  }
   
   .tag-label {
     font-size: 20rpx;
@@ -163,19 +171,52 @@ page {
   .blue-text { color: #2196f3; background: #eef5fc; padding: 4rpx 12rpx; border-radius: 10rpx;
     display: inline-block; }
   
-  .card-title {
-    font-size: 30rpx;
-    font-weight: 700;
-    color: #1a1b2e;
-    line-height: 1.3;
-  }
-  
-  .card-footer {
-    margin-top: 20rpx;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
+    .card-title {
+        font-size: 30rpx;
+        font-weight: 700;
+        color: #1a1b2e;
+        line-height: 1.3;
+        word-wrap: break-word; /* 允许长单词换行 */
+        
+        /* 增加两行截断，保持高度一致性 */
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2; 
+        overflow: hidden;
+      }
+      
+      .card-abstract {
+        margin-top: 14rpx;
+        font-size: 22rpx;
+        color: #666;
+        line-height: 1.5;
+        word-wrap: break-word; /* 允许长单词换行 */
+        
+        /* 增加三行截断，避免摘要过长导致卡片比例失调 */
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        overflow: hidden;
+      }
+      
+      .card-footer {
+        margin-top: 20rpx;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+      
+      .author-text {
+        flex: 1;
+        margin-right: 20rpx;
+        font-size: 20rpx;
+        color: #666;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0; /* 防止 footer 被作者名字撑破 */
+      }
   
   .mini-avatars { display: flex; }
   .avt { width: 36rpx; height: 36rpx; border-radius: 50%; border: 2rpx solid white; }
