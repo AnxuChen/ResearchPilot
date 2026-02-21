@@ -98,6 +98,20 @@
   <!-- Body -->
   <scroll-view scroll-y="true" class="modal-body">
 
+    <view class="input-group">
+      <text class="input-label">ABBREVIATION</text>
+    <view class="input-box">
+      <text class="input-icon">ID</text>
+      <input
+        value="{{formData.abbr}}"
+        data-field="abbr"
+        bindinput="onInputChange"
+        placeholder="e.g. CVPR, NeurIPS"
+        maxlength="10" 
+      />
+    </view>
+    </view>
+
     <!-- Conference Name -->
     <view class="input-group">
       <text class="input-label">CONFERENCE NAME</text>
@@ -137,7 +151,7 @@
             value="{{formData.startDate}}"
             data-field="startDate"
             bindinput="onInputChange"
-            placeholder="Jun 17, 2024"
+            placeholder="2026-01-01"
           />
         </view>
       </view>

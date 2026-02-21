@@ -162,9 +162,9 @@ Page({
         abbr: '',
         fullName: '',
         location: '',
-        deadline: '',
-        progress: 0,
-        note: '',
+        deadline: '2026-03-01',
+        progress: '50',
+        note: 'no notes here',
         colorTheme: 'green'
       }
     });
@@ -212,7 +212,7 @@ Page({
     this.processConferences(newList);
   },
 
-  // 颜色选择处理函数
+  // 添加颜色选择处理函数
   onSelectColor(e) {
     const theme = e.currentTarget.dataset.theme;
     this.setData({
