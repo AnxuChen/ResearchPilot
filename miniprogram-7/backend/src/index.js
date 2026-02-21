@@ -11,7 +11,7 @@ const port = Number(process.env.PORT || 3000);
 const jwtSecret = process.env.JWT_SECRET || "change_this_jwt_secret";
 const wechatAppId = process.env.WECHAT_APP_ID || "";
 const wechatAppSecret = process.env.WECHAT_APP_SECRET || "";
-const semanticScholarApiKey = process.env.SEMANTIC_SCHOLAR_API_KEY || "";
+const openAlexApiKey = process.env.OPENALEX_API_KEY || "";
 const llmApiKey = process.env.LLM_API_KEY || "";
 const llmBaseUrl = process.env.LLM_BASE_URL || "https://api-inference.modelscope.cn";
 const reviewModelName = process.env.REVIEW_MODEL_NAME || "deepseek-ai/DeepSeek-V3.2";
@@ -667,15 +667,13 @@ function buildPublishedAt(publicationDate, year) {
   return new Date();
 }
 
-async function requestSemanticScholar(url, { useApiKey = true } = {}) {
-  const headers = {
-    Accept: "application/json",
-  };
-  if (useApiKey && semanticScholarApiKey) {
-    headers["x-api-key"] = semanticScholarApiKey;
-  }
-
-  const resp = await fetch(url, { method: "GET", headers });
+async function requestSemanticScholar(url) {
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
   const text = await resp.text();
   let payload = {};
   if (text) {
@@ -701,7 +699,6 @@ async function fetchSemanticScholarPapersBySearch({
   keywords,
   page,
   pageSize,
-  useApiKey = true,
 }) {
   const offset = (page - 1) * pageSize;
   const fields = [
@@ -723,7 +720,7 @@ async function fetchSemanticScholarPapersBySearch({
   url.searchParams.set("offset", String(offset));
   url.searchParams.set("limit", String(pageSize));
   url.searchParams.set("fields", fields);
-  const payload = await requestSemanticScholar(url, { useApiKey });
+  const payload = await requestSemanticScholar(url);
 
   const rows = Array.isArray(payload?.data) ? payload.data : [];
   const total = Number.isFinite(payload?.total) ? payload.total : rows.length;
@@ -749,7 +746,7 @@ async function fetchSemanticScholarPapersByBulk({ keywords, page, pageSize }) {
   url.searchParams.set("query", keywords);
   url.searchParams.set("fields", fields);
 
-  const payload = await requestSemanticScholar(url, { useApiKey: false });
+  const payload = await requestSemanticScholar(url);
   const rows = Array.isArray(payload?.data) ? payload.data : [];
   const total = Number.isFinite(payload?.total) ? payload.total : rows.length;
   const offset = (page - 1) * pageSize;
@@ -780,15 +777,103 @@ async function fetchSemanticScholarPaperById(paperId) {
     )}`
   );
   url.searchParams.set("fields", fields);
+  return requestSemanticScholar(url);
+}
 
-  try {
-    return await requestSemanticScholar(url, { useApiKey: true });
-  } catch (errWithApiKey) {
-    if (semanticScholarApiKey && errWithApiKey?.status === 403) {
-      return requestSemanticScholar(url, { useApiKey: false });
+async function requestOpenAlex(url) {
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  const text = await resp.text();
+  let payload = {};
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = {};
     }
-    throw errWithApiKey;
   }
+  if (!resp.ok) {
+    const err = new Error(payload?.error || payload?.message || `openalex_http_${resp.status}`);
+    err.status = resp.status;
+    throw err;
+  }
+  return payload;
+}
+
+function parseOpenAlexAbstract(invertedIndex) {
+  if (!invertedIndex || typeof invertedIndex !== "object") {
+    return "No abstract available.";
+  }
+  const tokens = [];
+  for (const [word, positions] of Object.entries(invertedIndex)) {
+    if (!Array.isArray(positions)) continue;
+    for (const pos of positions) {
+      if (!Number.isInteger(pos) || pos < 0) continue;
+      tokens[pos] = word;
+    }
+  }
+  const text = tokens.filter(Boolean).join(" ").trim();
+  return text || "No abstract available.";
+}
+
+function normalizeOpenAlexWorkId(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  if (/^W\d+$/i.test(raw)) return raw.toUpperCase();
+  const match = raw.match(/(?:^|\/)(W\d+)(?:\/)?$/i);
+  if (!match) return "";
+  return match[1].toUpperCase();
+}
+
+async function fetchOpenAlexPapers({ keywords, page, pageSize }) {
+  const url = new URL("https://api.openalex.org/works");
+  url.searchParams.set("search", keywords);
+  url.searchParams.set("page", String(page));
+  url.searchParams.set("per-page", String(pageSize));
+  url.searchParams.set("filter", "has_abstract:true");
+  url.searchParams.set(
+    "select",
+    [
+      "id",
+      "display_name",
+      "authorships",
+      "abstract_inverted_index",
+      "publication_year",
+      "publication_date",
+      "cited_by_count",
+      "primary_location",
+      "best_oa_location",
+      "concepts",
+    ].join(",")
+  );
+  if (openAlexApiKey) {
+    url.searchParams.set("api_key", openAlexApiKey);
+  }
+
+  const payload = await requestOpenAlex(url);
+  const rows = Array.isArray(payload?.results) ? payload.results : [];
+  const total = Number.isFinite(payload?.meta?.count) ? payload.meta.count : rows.length;
+  return {
+    rows,
+    total,
+    source: "openalex",
+  };
+}
+
+async function fetchOpenAlexPaperByWorkId(workId) {
+  const normalizedWorkId = normalizeOpenAlexWorkId(workId);
+  if (!normalizedWorkId) {
+    throw createHttpError(400, "invalid_openalex_work_id");
+  }
+  const url = new URL(`https://api.openalex.org/works/${normalizedWorkId}`);
+  if (openAlexApiKey) {
+    url.searchParams.set("api_key", openAlexApiKey);
+  }
+  return requestOpenAlex(url);
 }
 
 function mapSemanticScholarPaper(row) {
@@ -819,6 +904,42 @@ function mapSemanticScholarPaper(row) {
     url: row?.url ? String(row.url) : null,
     openAccessPdfUrl: row?.openAccessPdf?.url
       ? String(row.openAccessPdf.url)
+      : null,
+  };
+}
+
+function mapOpenAlexPaper(row) {
+  const workId = normalizeOpenAlexWorkId(row?.id);
+  if (!workId) return null;
+
+  const authors = Array.isArray(row?.authorships)
+    ? row.authorships
+        .map((authorship) => authorship?.author?.display_name)
+        .filter((name) => typeof name === "string" && name.trim())
+    : [];
+  const tags = Array.isArray(row?.concepts)
+    ? row.concepts
+        .map((concept) => String(concept?.display_name || "").trim())
+        .filter(Boolean)
+        .slice(0, 8)
+    : [];
+
+  return {
+    id: `oa:${workId}`,
+    arxivId: `openalex:${workId}`,
+    title: String(row?.display_name || "Untitled Paper"),
+    authors,
+    abstract: parseOpenAlexAbstract(row?.abstract_inverted_index),
+    publishedAt: buildPublishedAt(row?.publication_date, row?.publication_year),
+    tags,
+    venue: row?.primary_location?.source?.display_name
+      ? String(row.primary_location.source.display_name)
+      : null,
+    year: Number.isFinite(row?.publication_year) ? row.publication_year : null,
+    citationCount: Number.isFinite(row?.cited_by_count) ? row.cited_by_count : 0,
+    url: row?.id ? String(row.id) : `https://openalex.org/${workId}`,
+    openAccessPdfUrl: row?.best_oa_location?.pdf_url
+      ? String(row.best_oa_location.pdf_url)
       : null,
   };
 }
@@ -1623,39 +1744,12 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
     const appliedKeywords = requestedKeywords || defaultFeedKeywords;
 
     try {
-      let semanticResult;
-      let semanticError = null;
-      try {
-        semanticResult = await fetchSemanticScholarPapersBySearch({
-          keywords: appliedKeywords,
-          page,
-          pageSize,
-          useApiKey: true,
-        });
-      } catch (errWithApiKey) {
-        semanticError = errWithApiKey;
-        if (semanticScholarApiKey && errWithApiKey?.status === 403) {
-          semanticResult = await fetchSemanticScholarPapersBySearch({
-            keywords: appliedKeywords,
-            page,
-            pageSize,
-            useApiKey: false,
-          });
-          semanticError = null;
-        }
-      }
-
-      if (!semanticResult) {
-        semanticResult = await fetchSemanticScholarPapersByBulk({
-          keywords: appliedKeywords,
-          page,
-          pageSize,
-        });
-      }
-
-      const semanticPapers = semanticResult.rows
-        .map(mapSemanticScholarPaper)
-        .filter(Boolean);
+      const semanticResult = await fetchSemanticScholarPapersBySearch({
+        keywords: appliedKeywords,
+        page,
+        pageSize,
+      });
+      const semanticPapers = semanticResult.rows.map(mapSemanticScholarPaper).filter(Boolean);
 
       await upsertPapersFromSemanticScholar(semanticPapers);
       const userActionMap = await getUserActionsByPaperIds(
@@ -1674,12 +1768,8 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
         userAction: userActionMap.get(paper.id) || null,
         summary: null,
         source: "semantic_scholar",
-        semanticProvider:
-          semanticResult.source === "semantic_scholar_bulk"
-            ? "semantic_scholar_bulk"
-            : "semantic_scholar_search",
-        semanticKeyFallback:
-          Boolean(semanticError) && semanticResult.source === "semantic_scholar_bulk",
+        semanticProvider: "semantic_scholar_search",
+        semanticKeyFallback: false,
         venue: paper.venue,
         year: paper.year,
         citationCount: paper.citationCount,
@@ -1704,6 +1794,60 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
         },
       });
     } catch (semanticErr) {
+      try {
+        const openAlexResult = await fetchOpenAlexPapers({
+          keywords: appliedKeywords,
+          page,
+          pageSize,
+        });
+        const openAlexPapers = openAlexResult.rows.map(mapOpenAlexPaper).filter(Boolean);
+
+        await upsertPapersFromSemanticScholar(openAlexPapers);
+        const userActionMap = await getUserActionsByPaperIds(
+          req.auth.userId,
+          openAlexPapers.map((paper) => paper.id)
+        );
+
+        const items = openAlexPapers.map((paper) => ({
+          id: paper.id,
+          arxivId: paper.arxivId,
+          title: paper.title,
+          authors: paper.authors,
+          abstract: paper.abstract,
+          publishedAt: paper.publishedAt,
+          tags: paper.tags,
+          userAction: userActionMap.get(paper.id) || null,
+          summary: null,
+          source: "openalex",
+          semanticProvider: "openalex",
+          semanticKeyFallback: true,
+          venue: paper.venue,
+          year: paper.year,
+          citationCount: paper.citationCount,
+          url: paper.url,
+          openAccessPdfUrl: paper.openAccessPdfUrl,
+        }));
+
+        const offset = (page - 1) * pageSize;
+        return res.status(200).json({
+          items,
+          pagination: {
+            page,
+            pageSize,
+            total: openAlexResult.total,
+            hasMore: offset + items.length < openAlexResult.total,
+          },
+          meta: {
+            requestedKeywords: requestedKeywords || null,
+            appliedKeywords,
+            source: "openalex",
+            fallback: true,
+            semanticScholarError: String(
+              semanticErr?.message || "semantic_scholar_failed"
+            ),
+          },
+        });
+      } catch (openAlexErr) {
       const localFeed = await loadLocalFeed({
         userId: req.auth.userId,
         page,
@@ -1720,8 +1864,10 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
           semanticScholarError: String(
             semanticErr?.message || "semantic_scholar_failed"
           ),
+          openAlexError: String(openAlexErr?.message || "openalex_failed"),
         },
       });
+      }
     }
   } catch (err) {
     return res.status(500).json({
@@ -1821,16 +1967,24 @@ app.get("/papers/:id", authMiddleware, async (req, res) => {
       return res.status(404).json({ message: "paper_not_found" });
     }
 
-    let semanticData = null;
+    const isOpenAlexPaper = String(paperId).startsWith("oa:");
+    let detailData = null;
     try {
-      semanticData = await fetchSemanticScholarPaperById(paperId);
+      if (isOpenAlexPaper) {
+        detailData = await fetchOpenAlexPaperByWorkId(String(paperId).slice(3));
+      } else {
+        detailData = await fetchSemanticScholarPaperById(paperId);
+      }
     } catch {
-      semanticData = null;
+      detailData = null;
     }
 
-    const semanticScholarUrl =
-      semanticData?.url || `https://www.semanticscholar.org/paper/${paperId}`;
-    const openAccessPdfUrl = semanticData?.openAccessPdf?.url || null;
+    const link = isOpenAlexPaper
+      ? detailData?.id || `https://openalex.org/${String(paperId).slice(3)}`
+      : detailData?.url || `https://www.semanticscholar.org/paper/${paperId}`;
+    const openAccessPdfUrl = isOpenAlexPaper
+      ? detailData?.best_oa_location?.pdf_url || null
+      : detailData?.openAccessPdf?.url || null;
 
     return res.status(200).json({
       id: row.id,
@@ -1841,12 +1995,24 @@ app.get("/papers/:id", authMiddleware, async (req, res) => {
       publishedAt: row.published_at,
       tags: row.tags || [],
       userAction: row.user_action || null,
-      citationCount: Number.isFinite(semanticData?.citationCount)
-        ? semanticData.citationCount
+      citationCount: Number.isFinite(
+        isOpenAlexPaper ? detailData?.cited_by_count : detailData?.citationCount
+      )
+        ? isOpenAlexPaper
+          ? detailData.cited_by_count
+          : detailData.citationCount
         : 0,
-      venue: semanticData?.venue || null,
-      year: Number.isFinite(semanticData?.year) ? semanticData.year : null,
-      link: semanticScholarUrl,
+      venue: isOpenAlexPaper
+        ? detailData?.primary_location?.source?.display_name || null
+        : detailData?.venue || null,
+      year: Number.isFinite(
+        isOpenAlexPaper ? detailData?.publication_year : detailData?.year
+      )
+        ? isOpenAlexPaper
+          ? detailData.publication_year
+          : detailData.year
+        : null,
+      link,
       openAccessPdfUrl,
       summary:
         row.summary_bg || row.summary_method || row.summary_contrib

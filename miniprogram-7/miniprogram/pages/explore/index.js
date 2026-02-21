@@ -55,10 +55,12 @@ Page({
   },
 
   onSearchTap() {
+    if (this.data.isLoading) return;
     this.fetchPapers(this.data.keywords);
   },
 
   async fetchPapers(rawKeywords, options = {}) {
+    if (this.data.isLoading) return;
     const keywords = (rawKeywords || "").trim();
     const query = [
       "page=1",
