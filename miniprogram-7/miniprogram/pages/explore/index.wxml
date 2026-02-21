@@ -34,7 +34,7 @@
     <text class="search-meta-text">当前关键词：{{appliedKeywords || "默认关键词"}}</text>
   </view>
   <view wx:if="{{source==='local_cache'}}" class="search-warning">
-    Semantic Scholar 限流，已自动回退到本地缓存
+    OpenAlex 请求失败，已自动回退到本地缓存
   </view>
 
   <view wx:if="{{isLoading}}" class="state-text">正在获取推荐论文...</view>

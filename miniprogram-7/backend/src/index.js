@@ -1744,20 +1744,20 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
     const appliedKeywords = requestedKeywords || defaultFeedKeywords;
 
     try {
-      const semanticResult = await fetchSemanticScholarPapersBySearch({
+      const openAlexResult = await fetchOpenAlexPapers({
         keywords: appliedKeywords,
         page,
         pageSize,
       });
-      const semanticPapers = semanticResult.rows.map(mapSemanticScholarPaper).filter(Boolean);
+      const openAlexPapers = openAlexResult.rows.map(mapOpenAlexPaper).filter(Boolean);
 
-      await upsertPapersFromSemanticScholar(semanticPapers);
+      await upsertPapersFromSemanticScholar(openAlexPapers);
       const userActionMap = await getUserActionsByPaperIds(
         req.auth.userId,
-        semanticPapers.map((paper) => paper.id)
+        openAlexPapers.map((paper) => paper.id)
       );
 
-      const items = semanticPapers.map((paper) => ({
+      const items = openAlexPapers.map((paper) => ({
         id: paper.id,
         arxivId: paper.arxivId,
         title: paper.title,
@@ -1767,8 +1767,8 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
         tags: paper.tags,
         userAction: userActionMap.get(paper.id) || null,
         summary: null,
-        source: "semantic_scholar",
-        semanticProvider: "semantic_scholar_search",
+        source: "openalex",
+        semanticProvider: "openalex",
         semanticKeyFallback: false,
         venue: paper.venue,
         year: paper.year,
@@ -1783,71 +1783,17 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
         pagination: {
           page,
           pageSize,
-          total: semanticResult.total,
-          hasMore: offset + items.length < semanticResult.total,
+          total: openAlexResult.total,
+          hasMore: offset + items.length < openAlexResult.total,
         },
         meta: {
           requestedKeywords: requestedKeywords || null,
           appliedKeywords,
-          source: semanticResult.source,
+          source: "openalex",
           fallback: false,
         },
       });
-    } catch (semanticErr) {
-      try {
-        const openAlexResult = await fetchOpenAlexPapers({
-          keywords: appliedKeywords,
-          page,
-          pageSize,
-        });
-        const openAlexPapers = openAlexResult.rows.map(mapOpenAlexPaper).filter(Boolean);
-
-        await upsertPapersFromSemanticScholar(openAlexPapers);
-        const userActionMap = await getUserActionsByPaperIds(
-          req.auth.userId,
-          openAlexPapers.map((paper) => paper.id)
-        );
-
-        const items = openAlexPapers.map((paper) => ({
-          id: paper.id,
-          arxivId: paper.arxivId,
-          title: paper.title,
-          authors: paper.authors,
-          abstract: paper.abstract,
-          publishedAt: paper.publishedAt,
-          tags: paper.tags,
-          userAction: userActionMap.get(paper.id) || null,
-          summary: null,
-          source: "openalex",
-          semanticProvider: "openalex",
-          semanticKeyFallback: true,
-          venue: paper.venue,
-          year: paper.year,
-          citationCount: paper.citationCount,
-          url: paper.url,
-          openAccessPdfUrl: paper.openAccessPdfUrl,
-        }));
-
-        const offset = (page - 1) * pageSize;
-        return res.status(200).json({
-          items,
-          pagination: {
-            page,
-            pageSize,
-            total: openAlexResult.total,
-            hasMore: offset + items.length < openAlexResult.total,
-          },
-          meta: {
-            requestedKeywords: requestedKeywords || null,
-            appliedKeywords,
-            source: "openalex",
-            fallback: true,
-            semanticScholarError: String(
-              semanticErr?.message || "semantic_scholar_failed"
-            ),
-          },
-        });
-      } catch (openAlexErr) {
+    } catch (openAlexErr) {
       const localFeed = await loadLocalFeed({
         userId: req.auth.userId,
         page,
@@ -1861,13 +1807,9 @@ app.get("/papers/feed", authMiddleware, async (req, res) => {
           appliedKeywords,
           source: "local_cache",
           fallback: true,
-          semanticScholarError: String(
-            semanticErr?.message || "semantic_scholar_failed"
-          ),
           openAlexError: String(openAlexErr?.message || "openalex_failed"),
         },
       });
-      }
     }
   } catch (err) {
     return res.status(500).json({
@@ -1968,23 +1910,24 @@ app.get("/papers/:id", authMiddleware, async (req, res) => {
     }
 
     const isOpenAlexPaper = String(paperId).startsWith("oa:");
+    const openAlexWorkIdFromArxiv = String(row.arxiv_id || "")
+      .replace(/^openalex:/i, "")
+      .trim();
+    const openAlexWorkId = isOpenAlexPaper
+      ? String(paperId).slice(3)
+      : normalizeOpenAlexWorkId(openAlexWorkIdFromArxiv);
+
     let detailData = null;
     try {
-      if (isOpenAlexPaper) {
-        detailData = await fetchOpenAlexPaperByWorkId(String(paperId).slice(3));
-      } else {
-        detailData = await fetchSemanticScholarPaperById(paperId);
+      if (openAlexWorkId) {
+        detailData = await fetchOpenAlexPaperByWorkId(openAlexWorkId);
       }
     } catch {
       detailData = null;
     }
 
-    const link = isOpenAlexPaper
-      ? detailData?.id || `https://openalex.org/${String(paperId).slice(3)}`
-      : detailData?.url || `https://www.semanticscholar.org/paper/${paperId}`;
-    const openAccessPdfUrl = isOpenAlexPaper
-      ? detailData?.best_oa_location?.pdf_url || null
-      : detailData?.openAccessPdf?.url || null;
+    const link = detailData?.id || (openAlexWorkId ? `https://openalex.org/${openAlexWorkId}` : null);
+    const openAccessPdfUrl = detailData?.best_oa_location?.pdf_url || null;
 
     return res.status(200).json({
       id: row.id,
@@ -1995,22 +1938,12 @@ app.get("/papers/:id", authMiddleware, async (req, res) => {
       publishedAt: row.published_at,
       tags: row.tags || [],
       userAction: row.user_action || null,
-      citationCount: Number.isFinite(
-        isOpenAlexPaper ? detailData?.cited_by_count : detailData?.citationCount
-      )
-        ? isOpenAlexPaper
-          ? detailData.cited_by_count
-          : detailData.citationCount
+      citationCount: Number.isFinite(detailData?.cited_by_count)
+        ? detailData.cited_by_count
         : 0,
-      venue: isOpenAlexPaper
-        ? detailData?.primary_location?.source?.display_name || null
-        : detailData?.venue || null,
-      year: Number.isFinite(
-        isOpenAlexPaper ? detailData?.publication_year : detailData?.year
-      )
-        ? isOpenAlexPaper
-          ? detailData.publication_year
-          : detailData.year
+      venue: detailData?.primary_location?.source?.display_name || null,
+      year: Number.isFinite(detailData?.publication_year)
+        ? detailData.publication_year
         : null,
       link,
       openAccessPdfUrl,
