@@ -98,7 +98,7 @@ page {
     right: 60rpx;
     width: 100rpx;
     height: 100rpx;
-    background: #00dbb5;
+    background: #2563EB;
     color: white;
     font-size: 60rpx;
     font-weight: bold;
@@ -224,33 +224,34 @@ page {
 
 /* ===== 分类卡片 ===== */
 .category-grid {
-  display: flex;
-  gap: 24rpx;
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 16rpx;
 }
 
 .category-card {
-  flex: 1;
-  padding: 24rpx;
-  border-radius: 24rpx;
-  border: 2rpx solid #e5e5e5;
-  text-align: center;
+    flex: 0 0 calc(33.33% - 12rpx); /* 每行显示3个，或者设为 20% 显示一行 */
+    padding: 16rpx 8rpx;
+    border-radius: 20rpx;
+    border: 2rpx solid #e5e5e5;
+    text-align: center;
+    transition: all 0.2s;
 }
 
 .category-card.active {
-  border-color: #00d4b1;
-  background: rgba(0,212,177,0.05);
+    border-color: #00d4b1;
+    background: rgba(0, 212, 177, 0.08);
+    transform: translateY(-2rpx);
 }
 
 .color-box {
-  width: 48rpx;
-  height: 48rpx;
-  border-radius: 12rpx;
-  margin: 0 auto 12rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%; /* 圆形色块更好看 */
+    margin: 0 auto 8rpx;
 }
 
-.primary { background: #00d4b1; }
-.orange { background: #ff6b6b; }
-.purple { background: #8b5cf6; }
+
 
 /* ===== Note ===== */
 .note-label {
@@ -284,7 +285,8 @@ page {
   }
 
 .save-btn {
-  width: 100%;
+  flex: 1;
+  width: 50%;
   background: linear-gradient(135deg,#00d4b1,#00bfa6);
   color: white;
   font-size: 30rpx;
@@ -298,15 +300,19 @@ page {
   box-shadow: 0 12rpx 30rpx rgba(0,212,177,0.35);
 }
 .delete-btn {
-    background: #fff0f0;
-    color: #ff4d4f;
-    border: 2rpx solid #ffccc7;
+    flex: 1;
+    width: 100%;
+    background: linear-gradient(135deg,#f85151,#f8343e);
+    color: white;
+    font-size: 30rpx;
+    font-weight: 700;
+    padding: 28rpx;
     border-radius: 24rpx;
-    width: 110rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0;
+    gap: 16rpx;
+    box-shadow: 0 12rpx 30rpx rgba(0,212,177,0.35);
   }
 
 view, scroll-view, input, textarea, button {

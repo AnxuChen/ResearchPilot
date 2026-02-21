@@ -21,7 +21,16 @@ Page({
     progress: 0,
     note: '',
     colorTheme: 'green'
-    }
+    },
+    //颜色列表
+    themeOptions: [
+        { name: 'Green', value: 'green' },
+        { name: 'Purple', value: 'purple' },
+        { name: 'Yellow', value: 'yellow' },
+        { name: 'Blue', value: 'blue' },
+        { name: 'Orange', value: 'orange' }
+      ]
+
   },
 
   /**
@@ -201,6 +210,14 @@ Page({
     });
   
     this.processConferences(newList);
+  },
+
+  // 颜色选择处理函数
+  onSelectColor(e) {
+    const theme = e.currentTarget.dataset.theme;
+    this.setData({
+      'formData.colorTheme': theme
+    });
   },
   /**
    * 生命周期函数--监听页面初次渲染完成

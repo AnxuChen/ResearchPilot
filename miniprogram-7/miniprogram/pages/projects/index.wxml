@@ -79,7 +79,7 @@
   </view>
 </view>
 
-<!-- 高级弹窗 -->
+<!-- 弹窗 -->
 <view wx:if="{{showModal}}" class="modal-mask">
 
 <view class="modal-container">
@@ -162,24 +162,21 @@
     <view class="category-group">
       <text class="input-label">CATEGORY THEME</text>
 
-      <view class="category-grid">
-
-        <view class="category-card active">
-          <view class="color-box primary"></view>
-          <text>Research</text>
-        </view>
-
-        <view class="category-card">
-          <view class="color-box orange"></view>
-          <text>Urgent</text>
-        </view>
-
-        <view class="category-card">
-          <view class="color-box purple"></view>
-          <text>Personal</text>
-        </view>
-
+      <view class="category-group">
+    <text class="input-label">COLOR THEME</text>
+    <view class="category-grid">
+      <view 
+        wx:for="{{themeOptions}}" 
+        wx:key="value"
+        class="category-card {{formData.colorTheme === item.value ? 'active' : ''}}"
+        bindtap="onSelectColor"
+        data-theme="{{item.value}}"
+      >
+        <view class="color-box {{item.value}}-bg"></view>
+        <text>{{item.name}}</text>
       </view>
+    </view>
+  </view>
     </view>
 
     <!-- Note -->
@@ -205,12 +202,12 @@
   <view class="modal-footer">
   <view style="display: flex; gap: 20rpx;">
     <button wx:if="{{isEdit}}" class="delete-btn" bindtap="onDeleteConference">
-      <text>🗑️</text>
+      <text>Delete</text>
     </button>
     
     <button class="save-btn" style="flex: 1;" bindtap="onSaveConference">
-      <text class="save-icon">💾</text>
-      <text>{{isEdit ? 'Apply Changes' : 'Add Conference'}}</text>
+      <text class="save-icon"></text>
+      <text>{{isEdit ? 'Apply' : 'Save'}}</text>
     </button>
   </view>
 </view>
