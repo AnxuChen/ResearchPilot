@@ -1,4 +1,3 @@
-<!--pages/projects/index.wxml-->
 <view class="container">
   <view class="nav-bar">
     <view class="brand">
@@ -19,15 +18,18 @@
     <view class="title-line highlight">Deadlines</view>
   </view>
 
-  <view class="card featured-card">
+  <view class="card featured-card"
+      wx:if="{{featuredConf}}"
+      bindtap="onEditConference"
+      data-item="{{featuredConf}}">
     <view class="card-header">
       <view class="header-left">
         <view class="logo-box cvpr-logo">
-          <text>CVPR</text>
+          <text>{{featuredConf.abbr}}</text>
         </view>
         <view class="conference-info">
-          <text class="conf-name">CVPR 2024</text>
-          <text class="conf-loc">📍 Seattle, USA</text>
+          <text class="conf-name">{{featuredConf.abbr}} {{featuredConf.year}}</text>
+          <text class="conf-loc">📍 {{featuredConf.location}}</text>
         </view>
       </view>
       <view class="fire-badge">🔥</view>
@@ -35,73 +37,194 @@
     
     <view class="deadline-row">
       <text class="label">SUBMISSION DEADLINE</text>
-      <text class="days-left">2 Days Left</text>
+      <text class="days-left">{{featuredConf.timeLeftStr}} Left</text>
     </view>
 
     <view class="progress-track">
-      <view class="progress-bar" style="width: 85%;"></view>
+      <view class="progress-bar" style="width: {{featuredConf.progress}}"></view>
     </view>
 
-    <view class="note-box">
-      <text class="note-label">Note:</text> Abstract registration is closed. Full paper submission only.
+    <view class="note-box" wx:if="{{featuredConf.note}}">
+      <text class="note-label">Note:</text> {{featuredConf.note}}
     </view>
   </view>
 
   <view class="grid-container">
-    <view class="card grid-card">
+    <view class="card grid-card"
+      wx:for="{{gridConfs}}"
+      wx:key="id"
+      bindtap="onEditConference"
+      data-item="{{item}}">
       <view class="card-top-row">
-        <view class="icon-circle teal-icon"></view>
-        <view class="tag">AI & ML</view>
+        <text class="conf-label">CONF</text>
+        <view class="time-pill {{item.colorTheme}}-pill">{{item.timeLeftStr}}</view>
       </view>
-      <view class="card-title">NeurIPS</view>
-      <view class="card-subtitle">Dec 10 - 16, 2024</view>
-      <view class="dashed-line"></view>
-      <view class="card-footer">
-        <text class="footer-tag teal-text">ABSTRACT</text>
-        <text class="footer-date">May 15</text>
-      </view>
-    </view>
-
-    <view class="card grid-card">
-      <view class="banner-box pink-banner">
-        <text>HCI</text>
-        <view class="year-tag">CHI '25</view>
-      </view>
-      <view class="card-content-pad">
-        <view class="card-title">CHI</view>
-        <view class="card-title-sub">Conference</view>
-        <view class="card-subtitle">🌎 Yokohama, JP</view>
-        <view class="card-footer-pill pink-bg">
-          <text>Sept 12</text>
-          <text>📅</text>
+      
+      <view class="card-title">{{item.abbr}}</view>
+      <view class="card-fullname">{{item.fullName}}</view>
+      
+      <view class="card-bottom">
+        <view class="progress-info">
+          <text>Progress</text>
+          <text>{{item.progress}}%</text>
+        </view>
+        <view class="progress-track small-track">
+          <view class="progress-bar-small {{item.colorTheme}}-bg" style="width: {{item.progress}}"></view>
         </view>
       </view>
     </view>
+  </view>
+  <view class="add-btn" bindtap="onAddConference">
+  +
+  </view>
+</view>
 
-    <view class="card grid-card orange-card">
-      <view class="white-icon">🚀</view>
-      <view class="orange-content">
-        <view class="card-title white-text">ICLR</view>
-        <view class="card-subtitle white-text-o">ACCEPTANCE</view>
-        <view class="big-percent">28%</view>
-      </view>
-    </view>
+<!-- 弹窗 -->
+<view wx:if="{{showModal}}" class="modal-mask">
 
-    <view class="card grid-card">
-      <view class="card-top-row">
-        <view class="icon-circle gray-icon"></view>
-        <view class="bookmark-icon">🔖</view>
-      </view>
-      <view class="card-title mt-20">AAAI 25</view>
-      <view class="progress-track small-track">
-        <view class="progress-bar teal-bar" style="width: 30%;"></view>
-      </view>
-      <view class="card-subtitle text-right">Reviewing Phase</view>
-    </view>
+<view class="modal-container">
 
-    <view class="card add-new-card">
-      <view class="plus-circle">+</view>
-      <text>Track New</text>
+  <!-- Header -->
+  <view class="modal-header">
+    <text class="modal-title">
+      {{isEdit ? 'Edit Conference' : 'Add Conference'}}
+    </text>
+
+    <view class="close-btn" bindtap="closeModal">
+      ✕
     </view>
   </view>
+
+  <!-- Body -->
+  <scroll-view scroll-y="true" class="modal-body">
+
+    <view class="input-group">
+      <text class="input-label">ABBREVIATION</text>
+    <view class="input-box">
+      <text class="input-icon">ID</text>
+      <input
+        value="{{formData.abbr}}"
+        data-field="abbr"
+        bindinput="onInputChange"
+        placeholder="e.g. CVPR, NeurIPS"
+        maxlength="10" 
+      />
+    </view>
+    </view>
+
+    <!-- Conference Name -->
+    <view class="input-group">
+      <text class="input-label">CONFERENCE NAME</text>
+      <view class="input-box">
+        <text class="input-icon">🏷</text>
+        <input
+          value="{{formData.fullName}}"
+          data-field="fullName"
+          bindinput="onInputChange"
+          placeholder="Conference Name"
+        />
+      </view>
+    </view>
+
+    <!-- Location -->
+    <view class="input-group">
+      <text class="input-label">LOCATION</text>
+      <view class="input-box">
+        <text class="input-icon">📍</text>
+        <input
+          value="{{formData.location}}"
+          data-field="location"
+          bindinput="onInputChange"
+          placeholder="Location"
+        />
+      </view>
+    </view>
+
+    <!-- Date Row -->
+    <view class="date-row">
+
+      <view class="input-group small">
+        <text class="input-label">START DATE</text>
+        <view class="input-box">
+          <text class="input-icon">📅</text>
+          <input
+            value="{{formData.startDate}}"
+            data-field="startDate"
+            bindinput="onInputChange"
+            placeholder="2026-01-01"
+          />
+        </view>
+      </view>
+
+      <view class="input-group small">
+        <text class="input-label">DEADLINE</text>
+        <view class="input-box deadline">
+          <text class="input-icon red">⏰</text>
+          <input
+            class="deadline-text"
+            value="{{formData.deadline}}"
+            data-field="deadline"
+            bindinput="onInputChange"
+            placeholder="Nov 15, 2023"
+          />
+        </view>
+      </view>
+
+    </view>
+
+    <!-- Category -->
+    <view class="category-group">
+      <text class="input-label">CATEGORY THEME</text>
+
+      <view class="category-group">
+    <text class="input-label">COLOR THEME</text>
+    <view class="category-grid">
+      <view 
+        wx:for="{{themeOptions}}" 
+        wx:key="value"
+        class="category-card {{formData.colorTheme === item.value ? 'active' : ''}}"
+        bindtap="onSelectColor"
+        data-theme="{{item.value}}"
+      >
+        <view class="color-box {{item.value}}-bg"></view>
+        <text>{{item.name}}</text>
+      </view>
+    </view>
+  </view>
+    </view>
+
+    <!-- Note -->
+    <view class="input-group">
+      <view class="note-label">
+        <text class="input-label">NOTE</text>
+        <text class="optional">Optional</text>
+      </view>
+
+      <view class="textarea-box">
+        <textarea
+          value="{{formData.note}}"
+          data-field="note"
+          bindinput="onInputChange"
+          placeholder="Add details..."
+        />
+      </view>
+    </view>
+
+  </scroll-view>
+
+  <!-- Footer -->
+  <view class="modal-footer">
+  <view style="display: flex; gap: 20rpx;">
+    <button wx:if="{{isEdit}}" class="delete-btn" bindtap="onDeleteConference">
+      <text>Delete</text>
+    </button>
+    
+    <button class="save-btn" style="flex: 1;" bindtap="onSaveConference">
+      <text class="save-icon"></text>
+      <text>{{isEdit ? 'Apply' : 'Save'}}</text>
+    </button>
+  </view>
+</view>
+
+</view>
 </view>

@@ -3,224 +3,318 @@ page {
     background: linear-gradient(135deg, #e3faf4 0%, #fdeef2 50%, #fcfaf0 100%) no-repeat fixed;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     box-sizing: border-box;
-    padding-bottom: 60rpx; /* 移除了底部大留白 */
+    padding-bottom: 60rpx;
   }
-  
+    
   .container {
     padding: 40rpx 32rpx;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* 确保容器内所有内容默认靠左对齐 */
+    align-items: flex-start;
   }
   
   /* --- 顶部导航 --- */
-  .nav-bar {
-    width: 100%; /* 撑满宽度 */
-    display: flex;
-    justify-content: space-between; /* Brand靠左，Menu靠右的关键 */
-    align-items: center;
-    margin-bottom: 40rpx;
-  }
-  
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-  }
-  
-  .brand-icon {
-    width: 60rpx;
-    height: 60rpx;
-    background-color: #00dbb5;
-    border-radius: 16rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .calendar-icon {
-    width: 24rpx;
-    height: 24rpx;
-    border: 4rpx solid white;
-    border-radius: 4rpx;
-  }
-  
-  .brand-text {
-    font-size: 24rpx;
-    font-weight: 700;
-    letter-spacing: 2rpx;
-    color: #00dbb5;
-    text-transform: uppercase;
-  }
-  
-  .menu-btn {
-    width: 80rpx;
-    height: 80rpx;
-    background: white;
-    border-radius: 24rpx;
-    box-shadow: 0 10rpx 20rpx rgba(0,0,0,0.05);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 8rpx;
-  }
-  
-  .line {
-    width: 32rpx;
-    height: 4rpx;
-    background: #333;
-    border-radius: 4rpx;
-  }
+  .nav-bar { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 40rpx; }
+  .brand { display: flex; align-items: center; gap: 16rpx; }
+  .brand-icon { width: 60rpx; height: 60rpx; background-color: #00dbb5; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
+  .calendar-icon { width: 24rpx; height: 24rpx; border: 4rpx solid white; border-radius: 4rpx; }
+  .brand-text { font-size: 24rpx; font-weight: 700; letter-spacing: 2rpx; color: #00dbb5; text-transform: uppercase; }
+  .menu-btn { width: 80rpx; height: 80rpx; background: white; border-radius: 24rpx; box-shadow: 0 10rpx 20rpx rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8rpx; }
+  .line { width: 32rpx; height: 4rpx; background: #333; border-radius: 4rpx; }
   .line-2 { width: 24rpx; transform: translateX(4rpx); }
   
-  /* --- 大标题靠左 --- */
-  .page-header {
-    width: 100%;
-    margin-bottom: 48rpx;
-    text-align: left;
-  }
-  
-  .title-line {
-    font-size: 64rpx;
-    font-weight: 800;
-    color: #1a1b2e;
-    line-height: 1.1;
-    display: block; /* 确保换行且靠左 */
-  }
-  
-  .highlight {
-    background: linear-gradient(90deg, #38e0c6 0%, #d87ce8 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+  /* --- 大标题 --- */
+  .page-header { width: 100%; margin-bottom: 48rpx; text-align: left; }
+  .title-line { font-size: 64rpx; font-weight: 800; color: #1a1b2e; line-height: 1.1; display: block; }
+  .highlight { background: linear-gradient(90deg, #38e0c6 0%, #d87ce8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   
   /* --- 卡片通用 --- */
-  .card {
-    background: white;
-    border-radius: 40rpx;
-    box-shadow: 0 16rpx 40rpx rgba(200, 200, 200, 0.25);
-    padding: 32rpx;
-    margin-bottom: 24rpx;
-    width: 100%;
-    box-sizing: border-box;
-  }
+  .card { background: white; border-radius: 40rpx; box-shadow: 0 8rpx 30rpx rgba(0, 0, 0, 0.04); padding: 32rpx; margin-bottom: 24rpx; width: 100%; box-sizing: border-box; border: 1px solid rgba(0,0,0,0.02); }
   
-  /* CVPR 卡片 */
-  .featured-card {
-    margin-bottom: 48rpx;
-    padding: 40rpx;
-  }
+  /* 大卡片 (Featured) */
+  .featured-card { margin-bottom: 48rpx; padding: 40rpx; }
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40rpx; }
+  .header-left { display: flex; gap: 24rpx; }
+  .logo-box { width: 100rpx; height: 100rpx; background: #0f1020; border-radius: 24rpx; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo-box text { color: white; font-weight: 800; font-size: 24rpx; }
+  .conference-info { display: flex; flex-direction: column; justify-content: center; }
+  .conf-name { font-size: 36rpx; font-weight: 800; color: #0f1020; }
+  .conf-loc { font-size: 26rpx; color: #888; margin-top: 4rpx; }
+  .fire-badge { background: #fff3e0; color: #ff8c42; width: 80rpx; height: 80rpx; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40rpx; }
   
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 40rpx;
-  }
+  .deadline-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 16rpx; }
+  .label { font-size: 22rpx; font-weight: 700; color: #a0a0b0; letter-spacing: 1rpx; }
+  .days-left { font-size: 28rpx; font-weight: 800; color: #ff8c42; }
+  .progress-track { height: 16rpx; background: #f0f0f5; border-radius: 10rpx; margin-bottom: 32rpx; width: 100%; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg, #ffcc33 0%, #ff6b6b 100%); border-radius: 10rpx; }
+  .note-box { background: #fff8f0; border-radius: 20rpx; padding: 24rpx; font-size: 24rpx; color: #d97706; border: 1px solid #ffedd5; line-height: 1.5; }
+  .note-label { font-weight: 800; color: #ea580c; }
   
-  .header-left {
-    display: flex;
-    gap: 24rpx;
-  }
+  /* --- 网格及网格卡片统一规范 --- */
+  .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 24rpx; width: 100%; }
+  .grid-card { margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between; min-height: 340rpx; border-radius: 32rpx; }
   
-  .logo-box {
+  /* 顶部标签行 */
+  .card-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24rpx; }
+  .conf-label { font-size: 20rpx; font-weight: 700; color: #9ca3af; letter-spacing: 2rpx; }
+  .time-pill { font-size: 20rpx; font-weight: 700; padding: 6rpx 16rpx; border-radius: 8rpx; }
+  
+  /* 文本信息 */
+  .card-title { font-size: 40rpx; font-weight: 800; color: #111827; margin-bottom: 8rpx; line-height: 1; }
+  /* 全称最多显示两行，超出用省略号 */
+  .card-fullname { font-size: 20rpx; color: #6b7280; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 32rpx; }
+  
+  /* 底部进度 */
+  .card-bottom { margin-top: auto; }
+  .progress-info { display: flex; justify-content: space-between; font-size: 20rpx; font-weight: 600; color: #6b7280; margin-bottom: 12rpx; }
+  .small-track { height: 8rpx; margin-bottom: 0; background: #f3f4f6; }
+  .progress-bar-small { height: 100%; border-radius: 8rpx; }
+  
+  /* --- 颜色主题变量配置 --- */
+  /* Green Theme */
+  .green-pill { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+  .green-bg { background: #10b981; }
+  
+  /* Purple Theme */
+  .purple-pill { background: #f5f3ff; color: #7c3aed; border: 1px solid #ede9fe; }
+  .purple-bg { background: #8b5cf6; }
+  
+  /* Yellow Theme */
+  .yellow-pill { background: #fffbeb; color: #d97706; border: 1px solid #fef3c7; }
+  .yellow-bg { background: #f59e0b; }
+  
+  /* Blue Theme */
+  .blue-pill { background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; }
+  .blue-bg { background: #3b82f6; }
+  
+  /* Orange Theme (Fallbacks) */
+  .orange-pill { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
+  .orange-bg { background: #f97316; }
+
+  /* ===== 添加按钮 ===== */
+.add-btn {
+    position: fixed;
+    bottom: 60rpx;
+    right: 60rpx;
     width: 100rpx;
     height: 100rpx;
-    background: #0f1020;
+    background: #2563EB;
+    color: white;
+    font-size: 60rpx;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 12rpx 30rpx rgba(0,0,0,0.2);
+  }
+  
+ /* ===== 背景遮罩 ===== */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(6rpx);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 999;
+}
+
+/* ===== 弹窗容器 ===== */
+.modal-container {
+    width: 100%;
+    max-height: 90vh; /* 使用最大高度，防止完全遮挡屏幕 */
+    height: auto; 
+    background: #ffffff;
+    border-top-left-radius: 48rpx;
+    border-top-right-radius: 48rpx;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -10rpx 40rpx rgba(0,0,0,0.15);
+    padding-bottom: env(safe-area-inset-bottom); /* 适配全面屏底部黑条 */
+  }
+
+/* ===== Header ===== */
+.modal-header {
+  padding: 40rpx 48rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: 700;
+}
+
+.close-btn {
+  font-size: 40rpx;
+  color: #999;
+}
+
+/* ===== Body ===== */
+.modal-body {
+    padding: 30rpx 40rpx;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0; /* 关键：允许 flex 子元素收缩 */
+  }
+
+/* ===== Label ===== */
+.input-label {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #888;
+  margin-bottom: 12rpx;
+  letter-spacing: 2rpx;
+}
+
+/* ===== 输入框 ===== */
+.input-group {
+  margin-bottom: 40rpx;
+}
+
+.input-box {
+    display: flex;
+    align-items: center;
+    background: #f6f7f9;
+    border-radius: 24rpx;
+    padding: 20rpx 24rpx;
+    border: 2rpx solid #eaeaea;
+    width: 100%; /* 配合 border-box 使用 */
+  }
+.input-box input {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.input-icon {
+  margin-right: 16rpx;
+  font-size: 32rpx;
+  opacity: 0.6;
+}
+
+.deadline {
+  background: #fff4f4;
+  border-color: #ffdede;
+}
+
+.deadline-text {
+  color: #e53935;
+  font-weight: 600;
+}
+
+.red {
+  color: #e53935;
+}
+
+/* ===== 日期双列 ===== */
+.date-row {
+    display: flex;
+    gap: 20rpx;
+    width: 100%;
+  }
+
+  .input-group.small {
+    flex: 1;
+    min-width: 0; /* 防止内容撑大 flex 项目 */
+  }
+
+/* ===== 分类卡片 ===== */
+.category-grid {
+    display: flex;
+    flex-wrap: wrap; /* 允许换行 */
+    gap: 16rpx;
+}
+
+.category-card {
+    flex: 0 0 calc(33.33% - 12rpx); /* 每行显示3个，或者设为 20% 显示一行 */
+    padding: 16rpx 8rpx;
+    border-radius: 20rpx;
+    border: 2rpx solid #e5e5e5;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.category-card.active {
+    border-color: #00d4b1;
+    background: rgba(0, 212, 177, 0.08);
+    transform: translateY(-2rpx);
+}
+
+.color-box {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%; /* 圆形色块更好看 */
+    margin: 0 auto 8rpx;
+}
+
+
+
+/* ===== Note ===== */
+.note-label {
+  display: flex;
+  justify-content: space-between;
+}
+
+.optional {
+  font-size: 20rpx;
+  color: #aaa;
+}
+
+.textarea-box {
+  background: #f3f4f6;
+  border-radius: 24rpx;
+  padding: 24rpx;
+}
+
+.textarea-box textarea {
+    width: 100%;
+    height: 160rpx;
+    font-size: 26rpx;
+    display: block; /* 消除间隙 */
+  }
+
+/* ===== Footer ===== */
+.modal-footer {
+    padding: 24rpx 40rpx;
+    border-top: 1px solid #f0f0f0;
+    background: #fff;
+  }
+
+.save-btn {
+  flex: 1;
+  width: 50%;
+  background: linear-gradient(135deg,#00d4b1,#00bfa6);
+  color: white;
+  font-size: 30rpx;
+  font-weight: 700;
+  padding: 28rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  box-shadow: 0 12rpx 30rpx rgba(0,212,177,0.35);
+}
+.delete-btn {
+    flex: 1;
+    width: 100%;
+    background: linear-gradient(135deg,#f85151,#f8343e);
+    color: white;
+    font-size: 30rpx;
+    font-weight: 700;
+    padding: 28rpx;
     border-radius: 24rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-  }
-  
-  .logo-box text {
-    color: white;
-    font-weight: 800;
-    font-size: 24rpx;
-  }
-  
-  .conference-info {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .conf-name {
-    font-size: 36rpx;
-    font-weight: 800;
-    color: #0f1020;
-  }
-  
-  .conf-loc {
-    font-size: 26rpx;
-    color: #888;
-  }
-  
-  .fire-badge {
-    background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);
-    width: 80rpx;
-    height: 80rpx;
-    border-radius: 24rpx 24rpx 4rpx 24rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32rpx;
-  }
-  
-  /* 进度条与提示 */
-  .deadline-row { display: flex; justify-content: space-between; margin-bottom: 16rpx; }
-  .label { font-size: 22rpx; font-weight: 700; color: #a0a0b0; }
-  .days-left { font-size: 24rpx; font-weight: 800; color: #ff8c42; }
-  .progress-track { height: 16rpx; background: #f0f0f5; border-radius: 10rpx; margin-bottom: 32rpx; }
-  .progress-bar { height: 100%; background: linear-gradient(90deg, #ffcc33 0%, #ff6b6b 100%); border-radius: 10rpx; }
-  .note-box { background: #fff8f0; border-radius: 20rpx; padding: 24rpx; font-size: 24rpx; color: #666; border: 1px solid #fff0e0; }
-  .note-label { color: #ff8c42; font-weight: 700; }
-  
-  /* 网格 */
-  .grid-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24rpx;
-    width: 100%;
-  }
-  
-  .grid-card {
-    min-height: 320rpx;
-    margin-bottom: 0; /* 在网格中不使用底部外边距 */
-  }
-  
-  /* 卡片内部元素样式同前 */
-  .card-top-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24rpx; }
-  .icon-circle { width: 60rpx; height: 60rpx; border-radius: 50%; }
-  .teal-icon { background: #e0fcf6; }
-  .gray-icon { background: #f5f5f7; }
-  .tag { background: #f0f0f5; padding: 8rpx 16rpx; border-radius: 12rpx; font-size: 20rpx; font-weight: 600; color: #666; }
-  .card-title { font-size: 32rpx; font-weight: 800; color: #1a1b2e; }
-  .card-subtitle { font-size: 24rpx; color: #999; }
-  .dashed-line { border-top: 2rpx dashed #eee; margin: 16rpx 0; }
-  .card-footer { display: flex; justify-content: space-between; align-items: center; }
-  .footer-tag { font-size: 20rpx; font-weight: 800; color: #00dbb5; }
-  
-  /* CHI 特殊Banner */
-  .pink-banner { background: #f3e5f5; height: 120rpx; border-radius: 20rpx; display: flex; align-items: center; justify-content: center; position: relative; margin: -32rpx -32rpx 20rpx -32rpx; width: calc(100% + 64rpx); }
-  .pink-banner text { font-size: 40rpx; font-weight: 800; color: #e1bee7; }
-  .year-tag { position: absolute; bottom: 10rpx; right: 10rpx; background: #ffd700; font-size: 18rpx; padding: 4rpx 8rpx; border-radius: 8rpx; font-weight: bold; }
-  .card-footer-pill { background: #fff0f6; padding: 12rpx 20rpx; border-radius: 16rpx; display: flex; justify-content: space-between; align-items: center; color: #d63384; font-size: 22rpx; font-weight: 700; }
-  
-  /* 橙色卡片 */
-  .orange-card { background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%); }
-  .white-text { color: white; }
-  .white-text-o { color: rgba(255,255,255,0.8); }
-  .big-percent { font-size: 64rpx; font-weight: 900; color: white; }
-  
-  /* 添加新追踪卡片 */
-  .add-new-card {
-    grid-column: span 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: 16rpx;
-    color: #999;
+    box-shadow: 0 12rpx 30rpx rgba(0,212,177,0.35);
   }
-  .plus-circle { width: 40rpx; height: 40rpx; background: #f0f0f5; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+view, scroll-view, input, textarea, button {
+    box-sizing: border-box;
+  }
