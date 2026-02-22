@@ -41,6 +41,7 @@ page {
   background: #f8fafc;
   color: #111827;
   font-size: 26rpx;
+  height: 300rpx;
 }
 
 .file-meta {
@@ -65,7 +66,9 @@ page {
 }
 
 .start-btn {
-  margin-top: 22rpx;
+  margin-top: 40rpx;
+  width: 400px;
+  height: 50px;
   border-radius: 999rpx;
   background: linear-gradient(90deg, #2dd4bf, #f472b6);
   color: #fff;
@@ -93,14 +96,14 @@ page {
 }
 
 .decision {
-  font-size: 34rpx;
+  font-size: 50rpx;
   font-weight: 800;
   color: #0f766e;
 }
 
 .score {
   font-size: 24rpx;
-  color: #111827;
+  color: #0f766e;
   font-weight: 700;
 }
 
@@ -110,7 +113,7 @@ page {
 
 .block-title {
   display: block;
-  font-size: 26rpx;
+  font-size: 33rpx;
   color: #111827;
   font-weight: 700;
 }
@@ -142,3 +145,208 @@ page {
   color: #374151;
   line-height: 1.5;
 }
+
+/* ===== 最近评审 ===== */
+
+.recent-section {
+    margin-top: 40rpx;
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20rpx;
+  }
+  
+  .section-title {
+    font-size: 30rpx;
+    font-weight: 800;
+    color: #111827;
+  }
+  
+  .view-all {
+    font-size: 24rpx;
+    color: #14b8a6;
+  }
+  
+  .recent-card {
+    background: #fff;
+    border-radius: 22rpx;
+    padding: 20rpx;
+    display: flex;
+    align-items: center;
+    margin-bottom: 18rpx;
+    box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.05);
+  }
+  
+  .file-icon {
+    width: 64rpx;
+    height: 64rpx;
+    border-radius: 16rpx;
+    margin-right: 18rpx;
+  }
+  
+  .pdf-icon {
+    background: linear-gradient(135deg, #f97316, #fb923c);
+  }
+  
+  .txt-icon {
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  }
+  
+  .recent-info {
+    flex: 1;
+  }
+  
+  .recent-name {
+    display: block;
+    font-size: 26rpx;
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  .recent-time {
+    margin-top: 6rpx;
+    display: block;
+    font-size: 22rpx;
+    color: #6b7280;
+  }
+  
+  .recent-score {
+    text-align: right;
+  }
+  
+  .score-num {
+    display: block;
+    font-size: 36rpx;
+    font-weight: 800;
+    color: #14b8a6;
+  }
+  
+  .score-label {
+    font-size: 22rpx;
+    color: #6b7280;
+  }
+  
+  /* ===== 评审说明 ===== */
+  
+  .tips-section {
+    margin-top: 40rpx;
+    background: #fff;
+    border-radius: 28rpx;
+    padding: 28rpx;
+    box-shadow: 0 14rpx 30rpx rgba(0, 0, 0, 0.05);
+  }
+  
+  .tips-title {
+    font-size: 28rpx;
+    font-weight: 800;
+    color: #111827;
+  }
+  
+  .tip-item {
+    display: flex;
+    margin-top: 22rpx;
+  }
+  
+  .tip-num {
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: 50%;
+    background: #f3f4f6;
+    text-align: center;
+    line-height: 40rpx;
+    font-size: 22rpx;
+    margin-right: 16rpx;
+    color: #111827;
+  }
+  
+  .tip-content {
+    flex: 1;
+    font-size: 24rpx;
+    color: #374151;
+    line-height: 1.6;
+  }
+  
+  .tip-bold {
+    font-weight: 700;
+    color: #111827;
+  }
+
+  /* ===== 新上传卡片 ===== */
+
+.upload-card {
+    background: #ffffff;
+    border-radius: 32rpx;
+    padding: 40rpx 30rpx;
+    box-shadow: 0 18rpx 40rpx rgba(0, 0, 0, 0.08);
+    text-align: center;
+    margin-top: 30rpx;
+  }
+  
+  /* 上传区域 */
+  .upload-area {
+    padding: 40rpx 20rpx;
+  }
+  
+  /* 圆形图标背景 */
+  .upload-icon {
+    width: 120rpx;
+    height: 120rpx;
+    margin: 0 auto 20rpx;
+    border-radius: 50%;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .icon-text {
+    font-size: 60rpx;
+    color: #60a5fa;
+  }
+  
+  /* 标题 */
+  .upload-title {
+    display: block;
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #111827;
+  }
+  
+  .upload-sub {
+    margin-top: 10rpx;
+    display: block;
+    font-size: 24rpx;
+    color: #9ca3af;
+  }
+  
+  /* 文件信息 */
+  .file-meta {
+    margin-top: 20rpx;
+    background: #f8fafc;
+    border-radius: 18rpx;
+    padding: 16rpx;
+  }
+  
+  /* ===== 渐变按钮升级版 ===== */
+  
+  .start-btn-new {
+    margin-top: 30rpx;
+    border-radius: 999rpx;
+    height: 90rpx;
+    line-height: 90rpx;
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(90deg, #2dd4bf, #60a5fa, #f472b6);
+    box-shadow: 0 12rpx 30rpx rgba(244, 114, 182, 0.35);
+    display: flex;
+    align-items: center;      /* 垂直居中 */
+    justify-content: center;  /* 水平居中 */
+  }
+  
+  .start-btn-new::after {
+    border: none;
+  }

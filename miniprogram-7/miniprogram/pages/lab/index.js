@@ -62,6 +62,24 @@ Page({
     });
   },
 
+  onLaunchAcademicPls() {
+    wx.navigateTo({
+      url: "/pages/AcademicPls/index",
+    });
+  },
+  
+  onLaunchDataViz() {
+    wx.navigateTo({
+      url: "/pages/DataViz/index",
+    });
+  },
+  
+  onLaunchCitations() {
+    wx.navigateTo({
+      url: "/pages/Citations/index",
+    });
+  },
+
   /**
    * 生命周期函数--监听页面隐藏
    */

@@ -1,0 +1,307 @@
+/* pages/Citations/index.wxss */
+.page {
+    padding: 40rpx;
+    position: relative;
+    overflow-x: hidden;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e3faf4 0%, #fdeef2 50%, #fcfaf0 100%) no-repeat fixed;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+  }
+  
+  /* 背景光斑 */
+  .bg-decoration .circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80rpx);
+    opacity: 0.15;
+  }
+  
+  .c1 {
+    width: 400rpx;
+    height: 400rpx;
+    background: #2dd4bf;
+    top: -100rpx;
+    right: -100rpx;
+  }
+  
+  .c2 {
+    width: 350rpx;
+    height: 350rpx;
+    background: #f97316;
+    top: 300rpx;
+    left: -120rpx;
+  }
+  
+  .c3 {
+    width: 300rpx;
+    height: 300rpx;
+    background: #ec4899;
+    bottom: 0;
+    right: 0;
+  }
+  
+  /* 标题 */
+  .header {
+    margin-bottom: 50rpx;
+  }
+  
+  .title-main {
+    font-size: 60rpx;
+    font-weight: 700;
+  }
+  
+  .title-gradient {
+    display: block;
+    font-size: 60rpx;
+    font-weight: 700;
+    background: linear-gradient(90deg, #2dd4bf, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  .subtitle {
+    margin-top: 15rpx;
+    color: #64748b;
+    font-size: 26rpx;
+  }
+  
+  /* 卡片 */
+  .card {
+    background: rgba(255,255,255,0.85);
+    border-radius: 40rpx;
+    padding: 40rpx;
+    margin-bottom: 50rpx;
+    box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.05);
+  }
+  
+  /* 头部 */
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30rpx;
+  }
+  
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    font-weight: 600;
+  }
+  
+  .icon-circle {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28rpx;
+  }
+  
+  .blue {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+  
+  .pink {
+    background: #fce7f3;
+    color: #ec4899;
+  }
+  
+  .actions {
+    display: flex;
+    gap: 15rpx;
+  }
+  
+  .btn-light {
+    padding: 10rpx 25rpx;
+    border-radius: 999rpx;
+    background: #f1f5f9;
+    font-size: 22rpx;
+    color: #64748b;
+  }
+  
+  .btn-blue {
+    padding: 10rpx 25rpx;
+    border-radius: 999rpx;
+    background: #e0f2fe;
+    font-size: 22rpx;
+    color: #0284c7;
+  }
+  
+  /* 输入框 */
+  .textarea {
+    width: 90%;
+    height: 200rpx;
+    background: #f8fafc;
+    border-radius: 25rpx;
+    padding: 25rpx;
+    font-size: 26rpx;
+    margin-bottom: 30rpx;
+  }
+  
+  /* 标签 */
+  .tag-row {
+    display: flex;
+    gap: 20rpx;
+    flex-wrap: wrap;
+  }
+  
+  .tag {
+    padding: 12rpx 30rpx;
+    border-radius: 20rpx;
+    background: #f1f5f9;
+    font-size: 22rpx;
+    color: #64748b;
+  }
+  
+  .tag.active {
+    background: #ccfbf1;
+    color: #0f766e;
+  }
+  
+  /* 中间箭头 */
+  .arrow-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: -20rpx;
+    margin-bottom: 20rpx;
+  }
+  
+  .arrow-btn {
+    width: 110rpx;
+    height: 110rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f97316, #ec4899);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40rpx;
+    box-shadow: 0 20rpx 50rpx rgba(249,115,22,0.4);
+  }
+  
+  /* 输出框 */
+  .output-box {
+    min-height: 160rpx;
+    border: 2rpx dashed #cbd5e1;
+    border-radius: 25rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #94a3b8;
+    font-size: 24rpx;
+    margin-bottom: 40rpx;
+  }
+  
+  /* footer */
+  .output-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .avatars {
+    display: flex;
+  }
+  
+  .avatar {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    color: white;
+    font-size: 22rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: -15rpx;
+  }
+  
+  .a1 { background: #60a5fa; }
+  .a2 { background: #ec4899; }
+  .a3 { background: #cbd5e1; color: #475569; }
+  
+  .copy-btn {
+    padding: 20rpx 40rpx;
+    border-radius: 25rpx;
+    border: 2rpx solid #99f6e4;
+    color: #0d9488;
+    font-size: 24rpx;
+  }
+  
+  /* Recent */
+  .recent-section {
+    margin-top: 30rpx;
+  }
+  
+  .recent-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25rpx;
+  }
+  
+  .recent-title {
+    font-size: 34rpx;
+    font-weight: 600;
+  }
+  
+  .view-all {
+    font-size: 24rpx;
+    color: #14b8a6;
+  }
+  
+  .recent-card {
+    background: white;
+    padding: 30rpx;
+    border-radius: 30rpx;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .recent-left {
+    display: flex;
+    gap: 20rpx;
+    align-items: center;
+  }
+  
+  .recent-icon {
+    width: 80rpx;
+    height: 80rpx;
+    border-radius: 20rpx;
+    background: #f3e8ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .recent-name {
+    font-size: 28rpx;
+    font-weight: 600;
+  }
+  
+  .recent-meta {
+    display: flex;
+    gap: 15rpx;
+    margin-top: 8rpx;
+  }
+  
+  .meta-tag {
+    font-size: 20rpx;
+    background: #dcfce7;
+    padding: 4rpx 12rpx;
+    border-radius: 10rpx;
+    color: #15803d;
+  }
+  
+  .meta-time {
+    font-size: 22rpx;
+    color: #94a3b8;
+  }
+  
+  .arrow {
+    font-size: 40rpx;
+    color: #cbd5e1;
+  }

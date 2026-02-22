@@ -4,23 +4,38 @@
     <text class="desc">上传你的稿件，AI 审稿人将给出评审意见、打分与录用建议。</text>
   </view>
 
-  <view class="card">
-    <button class="upload-btn" bindtap="onChooseFile">上传稿件 (PDF/TXT/MD)</button>
-    <view class="file-meta" wx:if="{{selectedFileName}}">
-      <text class="file-name">{{selectedFileName}}</text>
-      <text class="file-sub">{{selectedFileSizeText}}</text>
-    </view>
+  <view class="upload-card">
 
-    <button
-      class="start-btn"
-      bindtap="onStartReview"
-      loading="{{isReviewing}}"
-      disabled="{{isReviewing}}"
-    >
-      {{isReviewing ? '审稿中...' : 'Start Review'}}
-    </button>
-    <text class="task-status" wx:if="{{isReviewing}}">任务状态：{{reviewStatus || 'PENDING'}}</text>
+<!-- 上传区域 -->
+<view class="upload-area" bindtap="onChooseFile">
+  <view class="upload-icon">
+    <text class="icon-text">☁</text>
   </view>
+
+  <text class="upload-title">上传稿件</text>
+  <text class="upload-sub">(PDF/TXT/MD)</text>
+
+  <view class="file-meta" wx:if="{{selectedFileName}}">
+    <text class="file-name">{{selectedFileName}}</text>
+    <text class="file-sub">{{selectedFileSizeText}}</text>
+  </view>
+</view>
+
+<!-- 开始评审按钮 -->
+<button
+  class="start-btn-new"
+  bindtap="onStartReview"
+  loading="{{isReviewing}}"
+  disabled="{{isReviewing}}"
+>
+  {{isReviewing ? '审稿中...' : '开始评审'}}
+</button>
+
+<text class="task-status" wx:if="{{isReviewing}}">
+  任务状态：{{reviewStatus || 'PENDING'}}
+</text>
+
+</view>
 
   <view class="result-card" wx:if="{{reviewResult}}">
     <view class="result-top">
@@ -57,4 +72,68 @@
       </view>
     </view>
   </view>
+
+  <!-- 最近评审 -->
+  <view class="recent-section">
+    <view class="section-header">
+      <text class="section-title">最近评审</text>
+      <text class="view-all">查看全部</text>
+    </view>
+
+    <view class="recent-card">
+      <view class="file-icon pdf-icon"></view>
+      <view class="recent-info">
+        <text class="recent-name">大模型研究综述.pdf</text>
+        <text class="recent-time">2023.10.24 14:30</text>
+      </view>
+      <view class="recent-score">
+        <text class="score-num">4/10</text>
+        <text class="score-label">AI 评分</text>
+      </view>
+    </view>
+
+    <view class="recent-card">
+      <view class="file-icon txt-icon"></view>
+      <view class="recent-info">
+        <text class="recent-name">神经网络优化算法.txt</text>
+        <text class="recent-time">2023.10.22 09:15</text>
+      </view>
+      <view class="recent-score">
+        <text class="score-num">8/10</text>
+        <text class="score-label">AI 评分</text>
+      </view>
+    </view>
+  </view>
+
+
+  <!-- 评审说明 -->
+  <view class="tips-section">
+    <view class="tips-header">
+      <text class="tips-title">评审说明 (Pro Tips)</text>
+    </view>
+
+    <view class="tip-item">
+      <view class="tip-num">1</view>
+      <view class="tip-content">
+        <text class="tip-bold">完整性：</text>
+        <text>请确保上传的文件包含完整的标题、摘要和正文内容。</text>
+      </view>
+    </view>
+
+    <view class="tip-item">
+      <view class="tip-num">2</view>
+      <view class="tip-content">
+        <text class="tip-bold">针对性：</text>
+        <text>AI 评审将基于通用学术标准进行分析，仅供参考。</text>
+      </view>
+    </view>
+
+    <view class="tip-item">
+      <view class="tip-num">3</view>
+      <view class="tip-content">
+        <text class="tip-bold">隐私保护：</text>
+        <text>我们重视您的数据隐私，所有稿件在评审后均会加密处理。</text>
+      </view>
+    </view>
+  </view>  
 </view>

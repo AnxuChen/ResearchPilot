@@ -1,0 +1,111 @@
+<!--pages/AcademicPls/index.wxml-->
+<view class="page">
+
+<!-- 背景光晕 -->
+<view class="bg">
+  <view class="blob b1"></view>
+  <view class="blob b2"></view>
+  <view class="blob b3"></view>
+</view>
+
+<!-- 标题 -->
+<view class="header">
+  <text class="title">Academic</text>
+  <text class="title-gradient">Polisher</text>
+  <text class="subtitle">
+    Elevate your manuscript with AI-powered grammar and tone refinement.
+  </text>
+</view>
+
+<!-- 输入卡片 -->
+<view class="card">
+  <view class="card-header">
+    <view class="card-title">
+      <view class="icon blue">✎</view>
+      <text>Input Manuscript</text>
+    </view>
+
+    <view class="actions">
+      <view class="btn-light">Clear</view>
+      <view class="btn-blue">Paste</view>
+    </view>
+  </view>
+
+  <textarea
+    class="textarea"
+    placeholder="Paste your paragraph here. For example: 'This study investigate the effect of...'"
+  />
+
+  <view class="tag-row">
+    <view class="tag grammar">Grammar Check</view>
+    <view class="tag tone">Tone Adjust</view>
+    <view class="tag neutral">Conciseness</view>
+  </view>
+</view>
+
+<!-- 中间按钮 -->
+<view class="arrow-wrapper">
+  <view class="arrow-btn">↓</view>
+</view>
+
+<!-- 输出卡片 -->
+<view class="card output-card">
+  <view class="card-header">
+    <view class="card-title">
+      <view class="icon green">✨</view>
+      <text>AI Polished</text>
+    </view>
+
+  </view>
+
+  <view class="output-box">
+    <text>Polished text will appear here...</text>
+  </view>
+
+  <view class="output-footer">
+    <view class="feedback">
+      <view class="circle-btn">👎</view>
+      <view class="circle-btn">👍</view>
+    </view>
+
+    <view class="copy-btn">Copy to Clipboard</view>
+  </view>
+</view>
+
+<!-- Recent -->
+<view class="recent-section">
+  <view class="recent-header">
+    <text class="recent-title">Recent Polishes</text>
+    <text class="view-all">VIEW ALL</text>
+  </view>
+
+  <view class="recent-card">
+    <view class="recent-left">
+      <view class="recent-icon orange">Tt</view>
+      <view>
+        <text class="recent-name">Abstract: Neural Netw...</text>
+        <view class="recent-meta">
+          <text class="meta-tag purple">Formal</text>
+          <text class="meta-time">5m ago</text>
+        </view>
+      </view>
+    </view>
+    <text class="arrow">›</text>
+  </view>
+
+  <view class="recent-card">
+    <view class="recent-left">
+      <view class="recent-icon teal">📄</view>
+      <view>
+        <text class="recent-name">Intro: Quantum Comp...</text>
+        <view class="recent-meta">
+          <text class="meta-tag teal-tag">Academic</text>
+          <text class="meta-time">2h ago</text>
+        </view>
+      </view>
+    </view>
+    <text class="arrow">›</text>
+  </view>
+</view>
+
+</view>
