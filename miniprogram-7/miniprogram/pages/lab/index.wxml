@@ -45,7 +45,7 @@
     </view>
   </view>
 
-  <view class="card card-row">
+  <view class="card card-row" bindtap="onLaunchAcademicPls">
     <view class="icon-medium-box bg-orange-gradient">
       <image class="icon-lg" src="/images/lab/wand.png"></image>
     </view>
@@ -68,7 +68,7 @@
   </view>
 
   <view class="grid-section">
-    <view class="card grid-item">
+    <view class="card grid-item" bindtap="onLaunchDataViz">
       <view class="icon-circle bg-blue-light">
         <image class="icon-md" src="/images/lab/chart.png"></image>
       </view>
@@ -76,7 +76,7 @@
       <text class="grid-desc">CSV to Chart</text>
     </view>
 
-    <view class="card grid-item">
+    <view class="card grid-item" bindtap="onLaunchCitations">
       <view class="icon-circle bg-pink-light">
         <image class="icon-md" src="/images/lab/cite.png"></image>
       </view>

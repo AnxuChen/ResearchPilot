@@ -1,0 +1,98 @@
+<!--pages/DataViz/index.wxml-->
+<view class="page">
+
+<!-- 渐变背景 -->
+<view class="bg">
+  <view class="g g1"></view>
+  <view class="g g2"></view>
+  <view class="g g3"></view>
+  <view class="g g4"></view>
+</view>
+
+<!-- 标题 -->
+<view class="header">
+  <text class="title">Create</text>
+  <text class="title-gradient">Data Viz</text>
+</view>
+
+<!-- Upload Card -->
+<view class="card upload-card">
+  <view>
+    <text class="card-title">Upload Data</text>
+  </view>
+  <view>
+    <text class="card-sub">Support for CSV, JSON, or Excel files.</text>
+  </view>
+
+  <view class="upload-box">
+    <view class="upload-icon">↑</view>
+    <text class="upload-main">Tap to browse files</text>
+    <text class="upload-sub">or drag and drop here</text>
+  </view>
+</view>
+
+<!-- Select Template -->
+<view class="section">
+  <view class="section-header">
+    <text class="section-title">Select Template</text>
+    <text class="view-all">VIEW ALL</text>
+  </view>
+
+  <!-- Line Chart -->
+  <view class="card template-card">
+    <view class="badge popular">POPULAR</view>
+
+    <view class="template-row">
+      <view class="icon blue">📈</view>
+      <view>
+        <text class="template-name">Line Chart</text>
+        <text class="template-desc">Best for trends over time</text>
+      </view>
+    </view>
+
+    <view class="progress">
+      <view class="progress-bar"></view>
+    </view>
+  </view>
+
+  <!-- Scatter -->
+  <view class="card template-card">
+    <view class="badge new">NEW</view>
+
+    <view class="template-row">
+      <view class="icon orange">●</view>
+      <view>
+        <text class="template-name">Scatter Plot</text>
+        <text class="template-desc">Show relationships & clusters</text>
+      </view>
+    </view>
+
+    <view class="dots">
+      <view class="dot"></view>
+      <view class="dot"></view>
+      <view class="dot"></view>
+      <view class="dot active"></view>
+    </view>
+  </view>
+
+  <!-- Heatmap -->
+  <view class="card template-card">
+    <view class="template-row">
+      <view class="icon red">▦</view>
+      <view>
+        <text class="template-name">Heatmap</text>
+        <text class="template-desc">Visualize density & intensity</text>
+      </view>
+    </view>
+  </view>
+
+</view>
+
+<!-- Generate Button -->
+<view class="bottom-area">
+  <view class="generate-btn">
+    GENERATE CHART →
+  </view>
+</view>
+
+</view>

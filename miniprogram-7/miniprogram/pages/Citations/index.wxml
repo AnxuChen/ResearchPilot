@@ -1,0 +1,109 @@
+<!--pages/Citations/index.wxml-->
+<view class="page">
+
+<!-- 背景渐变光斑 -->
+<view class="bg-decoration">
+  <view class="circle c1"></view>
+  <view class="circle c2"></view>
+  <view class="circle c3"></view>
+</view>
+
+<!-- 标题区域 -->
+<view class="header">
+  <view class="title">
+    <text class="title-main">Format</text>
+    <text class="title-gradient">Citations</text>
+  </view>
+  <text class="subtitle">
+    Paste your raw references and get perfectly formatted citations instantly.
+  </text>
+</view>
+
+<!-- Input Card -->
+<view class="card">
+  <view class="card-header">
+    <view class="card-title">
+      <view class="icon-circle blue">
+        <text>↩</text>
+      </view>
+      <text>Input Source</text>
+    </view>
+
+    <view class="actions">
+      <view class="btn-light">Clear</view>
+      <view class="btn-blue">Paste</view>
+    </view>
+  </view>
+
+  <textarea 
+    class="textarea"
+    placeholder="e.g. Smith, J. (2020). The future of AI. Journal of Tech, 12(3), 45-67."
+  />
+
+  <view class="tag-row">
+    <view class="tag">APA 7</view>
+    <view class="tag">MLA 9</view>
+    <view class="tag">Chicago</view>
+    <view class="tag active">✨ Auto-Detect</view>
+  </view>
+</view>
+
+<!-- 中间箭头按钮 -->
+<view class="arrow-wrapper">
+  <view class="arrow-btn">
+    ↓
+  </view>
+</view>
+
+<!-- Output Card -->
+<view class="card">
+  <view class="card-header">
+    <view class="card-title">
+      <view class="icon-circle pink">
+        <text>”</text>
+      </view>
+      <text>Formatted Output</text>
+    </view>
+
+  </view>
+
+  <view class="output-box">
+    <text>Output will appear here...</text>
+  </view>
+
+  <view class="output-footer">
+    <view class="avatars">
+      <view class="avatar a1">A</view>
+      <view class="avatar a2">R</view>
+      <view class="avatar a3">+4</view>
+    </view>
+
+    <view class="copy-btn">
+      ⧉ Copy to Clipboard
+    </view>
+  </view>
+</view>
+
+<!-- Recent Formats -->
+<view class="recent-section">
+  <view class="recent-header">
+    <text class="recent-title">Recent Formats</text>
+    <text class="view-all">VIEW ALL</text>
+  </view>
+
+  <view class="recent-card">
+    <view class="recent-left">
+      <view class="recent-icon">📄</view>
+      <view>
+        <text class="recent-name">Nature Journal Ref.</text>
+        <view class="recent-meta">
+          <text class="meta-tag">APA</text>
+          <text class="meta-time">2m ago</text>
+        </view>
+      </view>
+    </view>
+    <text class="arrow">›</text>
+  </view>
+</view>
+
+</view>
