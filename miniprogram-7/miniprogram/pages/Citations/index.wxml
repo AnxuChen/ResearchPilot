@@ -30,28 +30,34 @@
     </view>
 
     <view class="actions">
-      <view class="btn-light">Clear</view>
-      <view class="btn-blue">Paste</view>
+      <view class="btn-light" bindtap="onClearInput">Clear</view>
+      <view class="btn-blue" bindtap="onPasteInput">Paste</view>
     </view>
   </view>
 
   <textarea 
     class="textarea"
+    value="{{inputText}}"
+    bindinput="onInputText"
     placeholder="e.g. Smith, J. (2020). The future of AI. Journal of Tech, 12(3), 45-67."
   />
 
   <view class="tag-row">
-    <view class="tag">APA 7</view>
-    <view class="tag">MLA 9</view>
-    <view class="tag">Chicago</view>
-    <view class="tag active">✨ Auto-Detect</view>
+    <view
+      wx:for="{{styleOptions}}"
+      wx:key="value"
+      class="tag {{selectedStyle === item.value ? 'active' : ''}}"
+      data-style="{{item.value}}"
+      bindtap="onSelectStyle"
+    >{{item.label}}</view>
   </view>
 </view>
 
 <!-- 中间箭头按钮 -->
 <view class="arrow-wrapper">
-  <view class="arrow-btn">
-    ↓
+  <view class="arrow-btn" bindtap="onFormatCitations">
+    <text wx:if="{{isSubmitting}}">...</text>
+    <text wx:else>↓</text>
   </view>
 </view>
 
@@ -68,8 +74,18 @@
   </view>
 
   <view class="output-box">
-    <text>Output will appear here...</text>
+    <text wx:if="{{outputText}}" class="output-text">{{outputText}}</text>
+    <text wx:else>Output will appear here...</text>
   </view>
+
+  <view wx:if="{{styleUsed || detectedStyle}}" class="style-meta">
+    <text>Style Used: {{styleUsed || '-'}}</text>
+    <text>Detected: {{detectedStyle || '-'}}</text>
+  </view>
+  <view wx:if="{{notes.length}}" class="note-list">
+    <view wx:for="{{notes}}" wx:key="index" class="note-item">• {{item}}</view>
+  </view>
+  <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
 
   <view class="output-footer">
     <view class="avatars">
@@ -78,7 +94,7 @@
       <view class="avatar a3">+4</view>
     </view>
 
-    <view class="copy-btn">
+    <view class="copy-btn" bindtap="onCopyOutput">
       ⧉ Copy to Clipboard
     </view>
   </view>

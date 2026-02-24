@@ -195,6 +195,40 @@
     font-size: 24rpx;
     margin-bottom: 40rpx;
   }
+
+  .output-text {
+    color: #1f2937;
+    white-space: pre-wrap;
+    line-height: 1.55;
+    padding: 18rpx;
+    font-size: 24rpx;
+  }
+
+  .style-meta {
+    display: flex;
+    justify-content: space-between;
+    color: #475569;
+    font-size: 22rpx;
+    margin-top: -16rpx;
+    margin-bottom: 16rpx;
+  }
+
+  .note-list {
+    margin-bottom: 20rpx;
+    color: #4b5563;
+    font-size: 22rpx;
+    line-height: 1.5;
+  }
+
+  .note-item {
+    margin-bottom: 8rpx;
+  }
+
+  .error-text {
+    color: #dc2626;
+    font-size: 22rpx;
+    margin-bottom: 20rpx;
+  }
   
   /* footer */
   .output-footer {

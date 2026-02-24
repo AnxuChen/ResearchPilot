@@ -3,6 +3,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import pdfParse from "pdf-parse";
 import { Pool } from "pg";
+import XLSX from "xlsx";
 
 const app = express();
 app.use(express.json({ limit: "80mb" }));
@@ -15,6 +16,7 @@ const openAlexApiKey = process.env.OPENALEX_API_KEY || "";
 const llmApiKey = process.env.LLM_API_KEY || "";
 const llmBaseUrl = process.env.LLM_BASE_URL || "https://api-inference.modelscope.cn";
 const reviewModelName = process.env.REVIEW_MODEL_NAME || "deepseek-ai/DeepSeek-V3.2";
+const llmTimeoutMs = Number(process.env.LLM_TIMEOUT_MS || 45000);
 const defaultFeedKeywords =
   process.env.DEFAULT_FEED_KEYWORDS ||
   "large language model, retrieval augmented generation, computer vision";
@@ -35,9 +37,17 @@ const SUPPORTED_MANUSCRIPT_EXTENSIONS = new Set(["pdf", "txt", "md"]);
 const MAX_MANUSCRIPT_BASE64_CHARS = 70 * 1024 * 1024;
 const MAX_REMOTE_MANUSCRIPT_BYTES = 55 * 1024 * 1024;
 const MAX_MANUSCRIPT_CHARS_FOR_REVIEW = 24000;
+const SUPPORTED_DATAVIZ_EXTENSIONS = new Set(["csv", "json", "xls", "xlsx"]);
+const SUPPORTED_DATAVIZ_CHART_TYPES = new Set(["line", "bar", "scatter", "heatmap"]);
+const MAX_DATAVIZ_SAMPLE_ROWS = 220;
+const MAX_DATAVIZ_COLUMNS = 24;
+const MAX_ACADEMIC_TEXT_CHARS = 20000;
+const MAX_CITATION_TEXT_CHARS = 12000;
 const ALLOWED_REMOTE_HOST_SUFFIXES = [".myqcloud.com", ".tcb.qcloud.la"];
 const REVIEW_TASK_TTL_MS = 2 * 60 * 60 * 1000;
+const DATAVIZ_TASK_TTL_MS = 2 * 60 * 60 * 1000;
 const reviewTasks = new Map();
+const dataVizTasks = new Map();
 const DEFAULT_PROJECT_DEADLINES = [
   {
     abbr: "CVPR",
@@ -112,6 +122,22 @@ function normalizeSortOrder(value) {
   const raw = String(value || "").trim().toLowerCase();
   if (raw === "asc") return "ASC";
   return "DESC";
+}
+
+function normalizeCitationStyle(value) {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "AUTO";
+  if (raw === "APA7" || raw === "APA") return "APA7";
+  if (raw === "MLA9" || raw === "MLA") return "MLA9";
+  if (raw === "CHICAGO") return "CHICAGO";
+  return "AUTO";
+}
+
+function normalizeChartType(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return "line";
+  if (SUPPORTED_DATAVIZ_CHART_TYPES.has(raw)) return raw;
+  return "line";
 }
 
 function normalizeEmail(value) {
@@ -665,6 +691,719 @@ async function generateAiReviewFromManuscript(manuscriptText) {
   }
 
   return normalizeReviewResult(parsed);
+}
+
+async function requestLlmCompletion({
+  messages,
+  temperature = 0.2,
+  maxTokens = 1200,
+  responseFormat = null,
+}) {
+  if (!llmApiKey) {
+    throw createHttpError(500, "llm_config_missing");
+  }
+  const endpoint = buildLlmChatCompletionsUrl(llmBaseUrl);
+
+  const body = {
+    model: reviewModelName,
+    temperature,
+    max_tokens: maxTokens,
+    messages,
+  };
+  if (responseFormat) {
+    body.response_format = responseFormat;
+  }
+
+  const controller = new AbortController();
+  const timeout = Number.isFinite(llmTimeoutMs) && llmTimeoutMs > 0 ? llmTimeoutMs : 45000;
+  const timer = setTimeout(() => controller.abort(), timeout);
+  let resp;
+  try {
+    resp = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${llmApiKey}`,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err?.name === "AbortError") {
+      throw createHttpError(504, "llm_timeout");
+    }
+    throw createHttpError(502, "llm_request_failed", String(err?.message || err));
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const text = await resp.text();
+  let payload = {};
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = {};
+    }
+  }
+
+  if (!resp.ok) {
+    const providerError =
+      payload?.error?.message || payload?.message || `llm_http_${resp.status}`;
+    throw createHttpError(502, "llm_request_failed", providerError);
+  }
+
+  let content = payload?.choices?.[0]?.message?.content;
+  if (Array.isArray(content)) {
+    content = content.map((item) => item?.text || "").join("\n");
+  }
+  if (typeof content !== "string") {
+    content = payload?.choices?.[0]?.text || "";
+  }
+  if (!String(content || "").trim()) {
+    throw createHttpError(502, "llm_response_empty");
+  }
+
+  return {
+    content: String(content || ""),
+    payload,
+    endpoint,
+  };
+}
+
+function normalizeAcademicPolishResult(raw, fallbackText) {
+  const candidate = raw && typeof raw === "object" ? raw : {};
+  const polishedText = String(candidate.polishedText || fallbackText || "").trim();
+  if (!polishedText) {
+    throw createHttpError(502, "llm_response_invalid");
+  }
+  return {
+    polishedText,
+    improvements: normalizeStringArray(candidate.improvements, 8),
+    tone: String(candidate.tone || "ACADEMIC").trim().toUpperCase(),
+  };
+}
+
+async function generateAcademicPolish(text) {
+  const completion = await requestLlmCompletion({
+    temperature: 0.15,
+    maxTokens: 1400,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are an expert academic writing assistant. Improve clarity, grammar, coherence, and formal tone while preserving meaning. Reply JSON only.",
+      },
+      {
+        role: "user",
+        content:
+          "Polish the following academic text. Return JSON with fields: polishedText (string), improvements (array of short strings), tone (string).\n\nText:\n" +
+          text,
+      },
+    ],
+  });
+  const parsed = parseJsonFromLlmContent(completion.content);
+  if (parsed) return normalizeAcademicPolishResult(parsed, text);
+
+  // Fallback: if provider returns plain text, treat it as polished output.
+  return normalizeAcademicPolishResult(
+    {
+      polishedText: completion.content,
+      improvements: [],
+      tone: "ACADEMIC",
+    },
+    text
+  );
+}
+
+function normalizeCitationResult(raw, fallbackLines, styleRequested) {
+  const candidate = raw && typeof raw === "object" ? raw : {};
+  const formattedReferences = Array.isArray(candidate.formattedReferences)
+    ? candidate.formattedReferences
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 100)
+    : [];
+  const lines = formattedReferences.length ? formattedReferences : fallbackLines;
+  return {
+    styleRequested: normalizeCitationStyle(styleRequested),
+    styleUsed: normalizeCitationStyle(candidate.styleUsed || styleRequested || "AUTO"),
+    detectedStyle: normalizeCitationStyle(candidate.detectedStyle || "AUTO"),
+    formattedReferences: lines,
+    formattedText: lines.join("\n"),
+    notes: normalizeStringArray(candidate.notes, 6),
+  };
+}
+
+function splitCitationLines(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 120);
+}
+
+async function generateCitationFormatting(rawText, style) {
+  const fallbackLines = splitCitationLines(rawText);
+  const completion = await requestLlmCompletion({
+    temperature: 0.1,
+    maxTokens: 1400,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a citation formatting assistant. Format references accurately. Never invent missing metadata. Reply JSON only.",
+      },
+      {
+        role: "user",
+        content:
+          `Format the following references to style "${style}". If style is AUTO, detect best style and normalize consistently.\n` +
+          "Return JSON with fields: styleUsed, detectedStyle, formattedReferences (array), notes (array).\n\nReferences:\n" +
+          rawText,
+      },
+    ],
+  });
+  const parsed = parseJsonFromLlmContent(completion.content);
+  if (parsed) {
+    return normalizeCitationResult(parsed, fallbackLines, style);
+  }
+  return normalizeCitationResult(
+    {
+      styleUsed: style,
+      detectedStyle: "AUTO",
+      formattedReferences: splitCitationLines(completion.content),
+      notes: [],
+    },
+    fallbackLines,
+    style
+  );
+}
+
+function coerceCellValue(value) {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "number" || typeof value === "boolean") return value;
+  const text = String(value).trim();
+  if (!text) return null;
+
+  const asNumber = Number(text);
+  if (Number.isFinite(asNumber) && /^[-+]?\d*\.?\d+(e[-+]?\d+)?$/i.test(text)) {
+    return asNumber;
+  }
+
+  const asDate = Date.parse(text);
+  if (Number.isFinite(asDate) && /\d{4}[-/]\d{1,2}[-/]\d{1,2}/.test(text)) {
+    return new Date(asDate).toISOString().slice(0, 10);
+  }
+
+  if (/^(true|false)$/i.test(text)) {
+    return text.toLowerCase() === "true";
+  }
+
+  return text.length > 200 ? `${text.slice(0, 197)}...` : text;
+}
+
+function parseCsvRow(line) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i];
+    if (char === "\"") {
+      const peek = line[i + 1];
+      if (inQuotes && peek === "\"") {
+        current += "\"";
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (char === "," && !inQuotes) {
+      cells.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+  cells.push(current.trim());
+  return cells;
+}
+
+function sanitizeRows(rows) {
+  const safeRows = [];
+  const knownColumns = [];
+  const colSet = new Set();
+
+  for (const row of rows || []) {
+    if (!row || typeof row !== "object" || Array.isArray(row)) continue;
+    const entries = Object.entries(row).slice(0, MAX_DATAVIZ_COLUMNS);
+    const safeRow = {};
+    for (const [rawKey, value] of entries) {
+      const key = String(rawKey || "").trim();
+      if (!key) continue;
+      safeRow[key] = coerceCellValue(value);
+      if (!colSet.has(key)) {
+        colSet.add(key);
+        knownColumns.push(key);
+      }
+    }
+    if (Object.keys(safeRow).length) {
+      safeRows.push(safeRow);
+    }
+    if (safeRows.length >= MAX_DATAVIZ_SAMPLE_ROWS) break;
+  }
+
+  return {
+    rows: safeRows,
+    columns: knownColumns.slice(0, MAX_DATAVIZ_COLUMNS),
+  };
+}
+
+function parseCsvRecords(text) {
+  const lines = String(text || "")
+    .replace(/\r/g, "")
+    .split("\n")
+    .filter((line) => String(line || "").trim());
+  if (lines.length < 2) {
+    throw createHttpError(400, "dataset_rows_too_few");
+  }
+
+  const headers = parseCsvRow(lines[0]).map((item, index) => {
+    const cleaned = String(item || "").trim();
+    return cleaned || `column_${index + 1}`;
+  });
+  const rows = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const cells = parseCsvRow(lines[i]);
+    const row = {};
+    headers.forEach((header, idx) => {
+      row[header] = cells[idx] ?? null;
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+function parseJsonRecords(text) {
+  let payload;
+  try {
+    payload = JSON.parse(String(text || ""));
+  } catch (err) {
+    throw createHttpError(400, "invalid_json_dataset", String(err?.message || err));
+  }
+
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === "object") {
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.items)) return payload.items;
+    if (Array.isArray(payload.results)) return payload.results;
+  }
+  throw createHttpError(400, "invalid_json_dataset_shape");
+}
+
+async function extractDataVizDataset({
+  fileName,
+  mimeType,
+  extension,
+  contentBase64,
+  fileUrl,
+}) {
+  const derivedExt = String(extension || "").toLowerCase() || extFromFileName(fileName);
+  if (!SUPPORTED_DATAVIZ_EXTENSIONS.has(derivedExt)) {
+    throw createHttpError(400, "unsupported_dataviz_file_type");
+  }
+
+  let buffer;
+  if (typeof contentBase64 === "string" && contentBase64.trim()) {
+    buffer = decodeBase64Buffer(contentBase64);
+  } else if (typeof fileUrl === "string" && fileUrl.trim()) {
+    buffer = await fetchRemoteFileBuffer(fileUrl);
+  } else {
+    throw createHttpError(400, "invalid_payload");
+  }
+
+  const normalizedMime = String(mimeType || "").toLowerCase();
+  let rawRows = [];
+
+  if (derivedExt === "csv" || normalizedMime.includes("csv")) {
+    rawRows = parseCsvRecords(buffer.toString("utf8"));
+  } else if (derivedExt === "json" || normalizedMime.includes("json")) {
+    rawRows = parseJsonRecords(buffer.toString("utf8"));
+  } else if (derivedExt === "xlsx" || derivedExt === "xls") {
+    try {
+      const workbook = XLSX.read(buffer, { type: "buffer" });
+      const firstSheetName = workbook.SheetNames?.[0];
+      if (!firstSheetName) {
+        throw new Error("empty_sheet");
+      }
+      const sheet = workbook.Sheets[firstSheetName];
+      rawRows = XLSX.utils.sheet_to_json(sheet, {
+        defval: null,
+      });
+    } catch (err) {
+      throw createHttpError(400, "excel_parse_failed", String(err?.message || err));
+    }
+  }
+
+  const { rows, columns } = sanitizeRows(rawRows);
+  if (!rows.length || !columns.length) {
+    throw createHttpError(400, "dataset_empty");
+  }
+
+  return {
+    extension: derivedExt,
+    rows,
+    columns,
+  };
+}
+
+function toNumericValue(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+function inferDatasetColumns(rows, columns) {
+  const metrics = {};
+  for (const col of columns) {
+    metrics[col] = { numeric: 0, date: 0, nonNull: 0 };
+  }
+  for (const row of rows) {
+    for (const col of columns) {
+      const value = row[col];
+      if (value === null || value === undefined || value === "") continue;
+      metrics[col].nonNull += 1;
+      if (typeof value === "number") {
+        metrics[col].numeric += 1;
+      } else if (Number.isFinite(Number(value))) {
+        metrics[col].numeric += 1;
+      }
+      if (typeof value === "string" && Number.isFinite(Date.parse(value))) {
+        metrics[col].date += 1;
+      }
+    }
+  }
+
+  const numericColumns = [];
+  const dateColumns = [];
+  const categoryColumns = [];
+  for (const col of columns) {
+    const m = metrics[col];
+    const ratioNumeric = m.nonNull ? m.numeric / m.nonNull : 0;
+    const ratioDate = m.nonNull ? m.date / m.nonNull : 0;
+    if (ratioNumeric >= 0.6) {
+      numericColumns.push(col);
+      continue;
+    }
+    if (ratioDate >= 0.6) {
+      dateColumns.push(col);
+      continue;
+    }
+    categoryColumns.push(col);
+  }
+
+  return { numericColumns, dateColumns, categoryColumns };
+}
+
+function selectChartFields(rows, chartType) {
+  const columns = Object.keys(rows[0] || {});
+  const roles = inferDatasetColumns(rows, columns);
+  if (!columns.length) {
+    throw createHttpError(400, "dataset_columns_missing");
+  }
+
+  if (chartType === "scatter") {
+    const xField = roles.numericColumns[0] || columns[0];
+    const yField = roles.numericColumns[1] || roles.numericColumns[0] || columns[1] || columns[0];
+    return { xField, yField, valueField: yField };
+  }
+
+  if (chartType === "heatmap") {
+    const xField = roles.categoryColumns[0] || roles.dateColumns[0] || columns[0];
+    const yField =
+      roles.categoryColumns[1] ||
+      roles.dateColumns[1] ||
+      columns.find((col) => col !== xField) ||
+      xField;
+    const valueField = roles.numericColumns[0] || columns.find((col) => col !== xField && col !== yField) || yField;
+    return { xField, yField, valueField };
+  }
+
+  const xField = roles.dateColumns[0] || roles.categoryColumns[0] || columns[0];
+  const yField = roles.numericColumns[0] || columns.find((col) => col !== xField) || columns[0];
+  return { xField, yField, valueField: yField };
+}
+
+function buildFallbackEchartsOption(rows, chartType, fields) {
+  const { xField, yField, valueField } = fields;
+  const sample = rows.slice(0, 80);
+
+  if (chartType === "scatter") {
+    const points = sample
+      .map((row, idx) => {
+        const x = toNumericValue(row[xField]);
+        const y = toNumericValue(row[yField]);
+        if (x === null || y === null) return [idx + 1, 0];
+        return [x, y];
+      })
+      .slice(0, 200);
+    return {
+      tooltip: { trigger: "item" },
+      xAxis: { type: "value", name: xField },
+      yAxis: { type: "value", name: yField },
+      series: [
+        {
+          type: "scatter",
+          data: points,
+          symbolSize: 9,
+        },
+      ],
+    };
+  }
+
+  if (chartType === "heatmap") {
+    const xCategories = [];
+    const yCategories = [];
+    const xSet = new Set();
+    const ySet = new Set();
+    for (const row of sample) {
+      const xv = String(row[xField] ?? "N/A");
+      const yv = String(row[yField] ?? "N/A");
+      if (!xSet.has(xv) && xCategories.length < 16) {
+        xSet.add(xv);
+        xCategories.push(xv);
+      }
+      if (!ySet.has(yv) && yCategories.length < 16) {
+        ySet.add(yv);
+        yCategories.push(yv);
+      }
+    }
+    const data = [];
+    for (const row of sample) {
+      const x = xCategories.indexOf(String(row[xField] ?? "N/A"));
+      const y = yCategories.indexOf(String(row[yField] ?? "N/A"));
+      if (x < 0 || y < 0) continue;
+      const value = toNumericValue(row[valueField]) ?? 0;
+      data.push([x, y, value]);
+    }
+    return {
+      tooltip: { position: "top" },
+      xAxis: { type: "category", data: xCategories, name: xField },
+      yAxis: { type: "category", data: yCategories, name: yField },
+      visualMap: {
+        min: 0,
+        max: Math.max(...data.map((item) => item[2]), 10),
+        calculable: true,
+        orient: "horizontal",
+        left: "center",
+        bottom: 0,
+      },
+      series: [
+        {
+          type: "heatmap",
+          data,
+        },
+      ],
+    };
+  }
+
+  const labels = sample.map((row) => String(row[xField] ?? ""));
+  const numericValues = sample.map((row, idx) => {
+    const n = toNumericValue(row[yField]);
+    return n === null ? idx + 1 : n;
+  });
+  return {
+    tooltip: { trigger: "axis" },
+    xAxis: {
+      type: "category",
+      data: labels,
+      name: xField,
+    },
+    yAxis: {
+      type: "value",
+      name: yField,
+    },
+    series: [
+      {
+        type: chartType === "bar" ? "bar" : "line",
+        smooth: chartType !== "bar",
+        data: numericValues,
+      },
+    ],
+  };
+}
+
+function normalizeDataVizResult(raw, fallback) {
+  const candidate = raw && typeof raw === "object" ? raw : {};
+  const chartType = normalizeChartType(candidate.chartType || fallback.chartType);
+  const title = String(candidate.title || fallback.title || "Generated Chart").trim();
+  const option =
+    candidate.echartsOption && typeof candidate.echartsOption === "object"
+      ? candidate.echartsOption
+      : fallback.echartsOption;
+
+  return {
+    chartType,
+    title,
+    summary: String(candidate.summary || fallback.summary || "").trim(),
+    insights: normalizeStringArray(candidate.insights, 8),
+    echartsOption: option,
+  };
+}
+
+async function generateDataVizResult({ rows, chartType, fileName }) {
+  const fields = selectChartFields(rows, chartType);
+  const fallbackOption = buildFallbackEchartsOption(rows, chartType, fields);
+  const fallback = {
+    chartType,
+    title: `Auto ${chartType} for ${fileName || "dataset"}`,
+    summary: `Generated from ${rows.length} rows.`,
+    insights: [],
+    echartsOption: fallbackOption,
+  };
+
+  const previewRows = rows.slice(0, 60);
+  if (!llmApiKey) {
+    return {
+      ...fallback,
+      previewRows,
+      fields,
+      provider: "heuristic",
+    };
+  }
+
+  try {
+    const completion = await requestLlmCompletion({
+      temperature: 0.15,
+      maxTokens: 1600,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a data visualization expert. Given tabular data and a preferred chart type, return ECharts option JSON and short insights. Reply JSON only.",
+        },
+        {
+          role: "user",
+          content:
+            `Preferred chart type: ${chartType}\n` +
+            `File name: ${fileName}\n` +
+            `Inferred fields: ${JSON.stringify(fields)}\n` +
+            "Sample rows (JSON):\n" +
+            JSON.stringify(previewRows) +
+            "\n\nReturn JSON with fields: chartType, title, summary, insights (array), echartsOption (object).",
+        },
+      ],
+    });
+
+    const parsed = parseJsonFromLlmContent(completion.content);
+    const normalized = normalizeDataVizResult(parsed, fallback);
+    return {
+      ...normalized,
+      previewRows,
+      fields,
+      provider: "llm",
+    };
+  } catch (err) {
+    return {
+      ...fallback,
+      previewRows,
+      fields,
+      provider: "heuristic_fallback",
+      fallbackReason: err?.publicMessage || String(err?.message || err),
+    };
+  }
+}
+
+function purgeExpiredDataVizTasks() {
+  const now = Date.now();
+  for (const [taskId, task] of dataVizTasks.entries()) {
+    const updatedAtMs = new Date(task.updatedAt).getTime();
+    if (!Number.isFinite(updatedAtMs)) continue;
+    if (now - updatedAtMs > DATAVIZ_TASK_TTL_MS) {
+      dataVizTasks.delete(taskId);
+    }
+  }
+}
+
+function createDataVizTask({
+  userId,
+  fileName,
+  mimeType,
+  extension,
+  fileUrl,
+  contentBase64,
+  chartType,
+}) {
+  purgeExpiredDataVizTasks();
+  const nowIso = new Date().toISOString();
+  const taskId = crypto.randomUUID();
+  const task = {
+    taskId,
+    userId,
+    fileName,
+    mimeType,
+    extension,
+    fileUrl,
+    contentBase64,
+    chartType,
+    status: "PENDING",
+    error: null,
+    result: null,
+    createdAt: nowIso,
+    updatedAt: nowIso,
+  };
+  dataVizTasks.set(taskId, task);
+  return task;
+}
+
+function buildDataVizTaskPayload(task) {
+  return {
+    taskId: task.taskId,
+    status: task.status,
+    fileName: task.fileName,
+    chartType: task.chartType,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    error: task.error || null,
+    result: task.result || null,
+  };
+}
+
+async function runDataVizTask(taskId) {
+  const task = dataVizTasks.get(taskId);
+  if (!task) return;
+
+  task.status = "RUNNING";
+  task.updatedAt = new Date().toISOString();
+  try {
+    const dataset = await extractDataVizDataset({
+      fileName: task.fileName,
+      mimeType: task.mimeType,
+      extension: task.extension,
+      fileUrl: task.fileUrl,
+      contentBase64: task.contentBase64,
+    });
+    const result = await generateDataVizResult({
+      rows: dataset.rows,
+      chartType: task.chartType,
+      fileName: task.fileName,
+    });
+    task.status = "DONE";
+    task.error = null;
+    task.result = {
+      ...result,
+      datasetMeta: {
+        extension: dataset.extension,
+        columns: dataset.columns,
+        rows: dataset.rows.length,
+      },
+    };
+    task.updatedAt = new Date().toISOString();
+  } catch (err) {
+    task.status = "FAILED";
+    task.error = err?.publicMessage || "dataviz_generate_failed";
+    task.updatedAt = new Date().toISOString();
+  }
 }
 
 function buildPublishedAt(publicationDate, year) {
@@ -2557,6 +3296,120 @@ app.get("/profile/dashboard", authMiddleware, async (req, res) => {
       detail: String(err?.message || err),
     });
   }
+});
+
+app.post("/lab/academic-pls", authMiddleware, async (req, res) => {
+  try {
+    const rawText = String(req.body?.text || "").trim();
+    if (!rawText) {
+      return res.status(400).json({ message: "invalid_input_text" });
+    }
+    if (rawText.length > MAX_ACADEMIC_TEXT_CHARS) {
+      return res.status(400).json({ message: "input_too_long" });
+    }
+
+    const result = await generateAcademicPolish(rawText);
+    return res.status(200).json({
+      result,
+      meta: {
+        model: reviewModelName,
+        endpoint: buildLlmChatCompletionsUrl(llmBaseUrl),
+        inputChars: rawText.length,
+        outputChars: result.polishedText.length,
+      },
+    });
+  } catch (err) {
+    const status = err?.status || 500;
+    return res.status(status).json({
+      message: err?.publicMessage || "academic_polish_failed",
+      detail: err?.detail || String(err?.message || err),
+    });
+  }
+});
+
+app.post("/lab/citations/format", authMiddleware, async (req, res) => {
+  try {
+    const rawText = String(req.body?.text || "").trim();
+    const style = normalizeCitationStyle(req.body?.style || "AUTO");
+    if (!rawText) {
+      return res.status(400).json({ message: "invalid_input_text" });
+    }
+    if (rawText.length > MAX_CITATION_TEXT_CHARS) {
+      return res.status(400).json({ message: "input_too_long" });
+    }
+
+    const result = await generateCitationFormatting(rawText, style);
+    return res.status(200).json({
+      result,
+      meta: {
+        model: reviewModelName,
+        endpoint: buildLlmChatCompletionsUrl(llmBaseUrl),
+        inputChars: rawText.length,
+        outputRefs: result.formattedReferences.length,
+      },
+    });
+  } catch (err) {
+    const status = err?.status || 500;
+    return res.status(status).json({
+      message: err?.publicMessage || "citation_format_failed",
+      detail: err?.detail || String(err?.message || err),
+    });
+  }
+});
+
+app.post("/lab/data-viz/tasks", authMiddleware, async (req, res) => {
+  try {
+    const fileName = String(req.body?.fileName || "").trim();
+    const mimeType = String(req.body?.mimeType || "").trim();
+    const extension = String(req.body?.extension || "").trim();
+    const fileUrl = String(req.body?.fileUrl || "").trim();
+    const contentBase64 = String(req.body?.contentBase64 || "");
+    const chartType = normalizeChartType(req.body?.chartType || "line");
+
+    if (!fileName || (!fileUrl && !contentBase64.trim())) {
+      return res.status(400).json({ message: "invalid_payload" });
+    }
+    const derivedExt = extension || extFromFileName(fileName);
+    if (!SUPPORTED_DATAVIZ_EXTENSIONS.has(String(derivedExt || "").toLowerCase())) {
+      return res.status(400).json({ message: "unsupported_dataviz_file_type" });
+    }
+
+    const task = createDataVizTask({
+      userId: req.auth.userId,
+      fileName,
+      mimeType,
+      extension: derivedExt,
+      fileUrl,
+      contentBase64,
+      chartType,
+    });
+    runDataVizTask(task.taskId).catch(() => {});
+
+    return res.status(202).json({
+      task: buildDataVizTaskPayload(task),
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "dataviz_task_create_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get("/lab/data-viz/tasks/:taskId", authMiddleware, async (req, res) => {
+  const taskId = String(req.params?.taskId || "").trim();
+  if (!taskId) {
+    return res.status(400).json({ message: "invalid_task_id" });
+  }
+
+  const task = dataVizTasks.get(taskId);
+  if (!task || task.userId !== req.auth.userId) {
+    return res.status(404).json({ message: "task_not_found" });
+  }
+
+  return res.status(200).json({
+    task: buildDataVizTaskPayload(task),
+  });
 });
 
 app.post("/lab/review-simulator/tasks", authMiddleware, async (req, res) => {

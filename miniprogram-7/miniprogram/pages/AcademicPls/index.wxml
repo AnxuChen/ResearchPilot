@@ -26,13 +26,15 @@
     </view>
 
     <view class="actions">
-      <view class="btn-light">Clear</view>
-      <view class="btn-blue">Paste</view>
+      <view class="btn-light" bindtap="onClearInput">Clear</view>
+      <view class="btn-blue" bindtap="onPasteInput">Paste</view>
     </view>
   </view>
 
   <textarea
     class="textarea"
+    value="{{inputText}}"
+    bindinput="onInputText"
     placeholder="Paste your paragraph here. For example: 'This study investigate the effect of...'"
   />
 
@@ -45,7 +47,10 @@
 
 <!-- 中间按钮 -->
 <view class="arrow-wrapper">
-  <view class="arrow-btn">↓</view>
+  <view class="arrow-btn" bindtap="onPolishText">
+    <text wx:if="{{isSubmitting}}">...</text>
+    <text wx:else>↓</text>
+  </view>
 </view>
 
 <!-- 输出卡片 -->
@@ -59,8 +64,14 @@
   </view>
 
   <view class="output-box">
-    <text>Polished text will appear here...</text>
+    <text wx:if="{{outputText}}" class="output-text">{{outputText}}</text>
+    <text wx:else>Polished text will appear here...</text>
   </view>
+
+  <view wx:if="{{improvements.length}}" class="improve-list">
+    <view wx:for="{{improvements}}" wx:key="index" class="improve-item">• {{item}}</view>
+  </view>
+  <view wx:if="{{errorMsg}}" class="error-text">{{errorMsg}}</view>
 
   <view class="output-footer">
     <view class="feedback">
@@ -68,7 +79,7 @@
       <view class="circle-btn">👍</view>
     </view>
 
-    <view class="copy-btn">Copy to Clipboard</view>
+    <view class="copy-btn" bindtap="onCopyOutput">Copy to Clipboard</view>
   </view>
 </view>
 

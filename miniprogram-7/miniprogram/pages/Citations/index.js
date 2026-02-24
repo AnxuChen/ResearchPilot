@@ -1,66 +1,129 @@
-// pages/Citations/index.js
+const { request } = require("../../utils/request");
+
+const STYLE_OPTIONS = [
+  { value: "APA7", label: "APA 7" },
+  { value: "MLA9", label: "MLA 9" },
+  { value: "CHICAGO", label: "Chicago" },
+  { value: "AUTO", label: "✨ Auto-Detect" },
+];
+
 Page({
+  data: {
+    inputText: "",
+    selectedStyle: "AUTO",
+    styleOptions: STYLE_OPTIONS,
+    outputText: "",
+    styleUsed: "",
+    detectedStyle: "",
+    notes: [],
+    isSubmitting: false,
+    errorMsg: "",
+  },
 
-    /**
-     * 页面的初始数据
-     */
-    data: {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面加载
-     */
-    onLoad(options) {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面初次渲染完成
-     */
-    onReady() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面显示
-     */
-    onShow() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面隐藏
-     */
-    onHide() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面卸载
-     */
-    onUnload() {
-
-    },
-
-    /**
-     * 页面相关事件处理函数--监听用户下拉动作
-     */
-    onPullDownRefresh() {
-
-    },
-
-    /**
-     * 页面上拉触底事件的处理函数
-     */
-    onReachBottom() {
-
-    },
-
-    /**
-     * 用户点击右上角分享
-     */
-    onShareAppMessage() {
-
+  handleAuthError(err) {
+    if (err.statusCode === 401 || err.message === "missing_token") {
+      wx.removeStorageSync("token");
+      wx.removeStorageSync("user");
+      wx.reLaunch({
+        url: "/pages/login/login",
+      });
+      return true;
     }
-})
+    return false;
+  },
+
+  onInputText(e) {
+    this.setData({
+      inputText: e.detail.value || "",
+      errorMsg: "",
+    });
+  },
+
+  onClearInput() {
+    this.setData({
+      inputText: "",
+      outputText: "",
+      notes: [],
+      styleUsed: "",
+      detectedStyle: "",
+      errorMsg: "",
+    });
+  },
+
+  onPasteInput() {
+    wx.getClipboardData({
+      success: (res) => {
+        this.setData({
+          inputText: String(res?.data || ""),
+          errorMsg: "",
+        });
+      },
+      fail: () => {
+        wx.showToast({
+          title: "读取剪贴板失败",
+          icon: "none",
+        });
+      },
+    });
+  },
+
+  onSelectStyle(e) {
+    const style = String(e.currentTarget?.dataset?.style || "AUTO").toUpperCase();
+    this.setData({ selectedStyle: style });
+  },
+
+  async onFormatCitations() {
+    if (this.data.isSubmitting) return;
+    const text = String(this.data.inputText || "").trim();
+    if (!text) {
+      wx.showToast({ title: "请先输入引用文本", icon: "none" });
+      return;
+    }
+
+    this.setData({
+      isSubmitting: true,
+      errorMsg: "",
+    });
+
+    try {
+      const resp = await request({
+        url: "/lab/citations/format",
+        method: "POST",
+        auth: true,
+        timeout: 30000,
+        data: {
+          text,
+          style: this.data.selectedStyle,
+        },
+      });
+      const result = resp?.result || {};
+      this.setData({
+        outputText: String(result.formattedText || "").trim(),
+        styleUsed: String(result.styleUsed || ""),
+        detectedStyle: String(result.detectedStyle || ""),
+        notes: Array.isArray(result.notes) ? result.notes : [],
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      const msg = err?.response?.message || "格式化失败，请稍后重试";
+      this.setData({ errorMsg: msg });
+      wx.showToast({ title: "格式化失败", icon: "none" });
+    } finally {
+      this.setData({ isSubmitting: false });
+    }
+  },
+
+  onCopyOutput() {
+    const text = String(this.data.outputText || "").trim();
+    if (!text) {
+      wx.showToast({ title: "暂无可复制内容", icon: "none" });
+      return;
+    }
+    wx.setClipboardData({
+      data: text,
+      success: () => {
+        wx.showToast({ title: "已复制", icon: "success" });
+      },
+    });
+  },
+});

@@ -1,66 +1,136 @@
-// pages/AcademicPls/index.js
+const { request } = require("../../utils/request");
+
+const MIN_TEXT_LENGTH = 30;
+const MAX_TEXT_LENGTH = 20000;
+
 Page({
+  data: {
+    inputText: "",
+    outputText: "",
+    improvements: [],
+    isSubmitting: false,
+    errorMsg: "",
+  },
 
-    /**
-     * 页面的初始数据
-     */
-    data: {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面加载
-     */
-    onLoad(options) {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面初次渲染完成
-     */
-    onReady() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面显示
-     */
-    onShow() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面隐藏
-     */
-    onHide() {
-
-    },
-
-    /**
-     * 生命周期函数--监听页面卸载
-     */
-    onUnload() {
-
-    },
-
-    /**
-     * 页面相关事件处理函数--监听用户下拉动作
-     */
-    onPullDownRefresh() {
-
-    },
-
-    /**
-     * 页面上拉触底事件的处理函数
-     */
-    onReachBottom() {
-
-    },
-
-    /**
-     * 用户点击右上角分享
-     */
-    onShareAppMessage() {
-
+  handleAuthError(err) {
+    if (err.statusCode === 401 || err.message === "missing_token") {
+      wx.removeStorageSync("token");
+      wx.removeStorageSync("user");
+      wx.reLaunch({
+        url: "/pages/login/login",
+      });
+      return true;
     }
-})
+    return false;
+  },
+
+  onInputText(e) {
+    this.setData({
+      inputText: e.detail.value || "",
+      errorMsg: "",
+    });
+  },
+
+  onClearInput() {
+    this.setData({
+      inputText: "",
+      outputText: "",
+      improvements: [],
+      errorMsg: "",
+    });
+  },
+
+  onPasteInput() {
+    wx.getClipboardData({
+      success: (res) => {
+        const text = String(res?.data || "");
+        this.setData({
+          inputText: text,
+          errorMsg: "",
+        });
+      },
+      fail: () => {
+        wx.showToast({
+          title: "读取剪贴板失败",
+          icon: "none",
+        });
+      },
+    });
+  },
+
+  async onPolishText() {
+    const text = String(this.data.inputText || "").trim();
+    if (this.data.isSubmitting) return;
+    if (!text) {
+      wx.showToast({
+        title: "请先输入论文文本",
+        icon: "none",
+      });
+      return;
+    }
+    if (text.length < MIN_TEXT_LENGTH) {
+      wx.showToast({
+        title: `至少输入 ${MIN_TEXT_LENGTH} 个字符`,
+        icon: "none",
+      });
+      return;
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      wx.showToast({
+        title: "输入过长，请精简后重试",
+        icon: "none",
+      });
+      return;
+    }
+
+    this.setData({
+      isSubmitting: true,
+      errorMsg: "",
+    });
+
+    try {
+      const resp = await request({
+        url: "/lab/academic-pls",
+        method: "POST",
+        auth: true,
+        timeout: 30000,
+        data: { text },
+      });
+      const result = resp?.result || {};
+      this.setData({
+        outputText: String(result.polishedText || "").trim(),
+        improvements: Array.isArray(result.improvements) ? result.improvements : [],
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      const msg = err?.response?.message || "润色失败，请稍后重试";
+      this.setData({ errorMsg: msg });
+      wx.showToast({
+        title: "润色失败",
+        icon: "none",
+      });
+    } finally {
+      this.setData({ isSubmitting: false });
+    }
+  },
+
+  onCopyOutput() {
+    const outputText = String(this.data.outputText || "").trim();
+    if (!outputText) {
+      wx.showToast({
+        title: "暂无可复制内容",
+        icon: "none",
+      });
+      return;
+    }
+    wx.setClipboardData({
+      data: outputText,
+      success: () => {
+        wx.showToast({
+          title: "已复制",
+          icon: "success",
+        });
+      },
+    });
+  },
+});

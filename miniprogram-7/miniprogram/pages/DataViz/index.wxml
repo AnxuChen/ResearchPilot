@@ -24,10 +24,14 @@
     <text class="card-sub">Support for CSV, JSON, or Excel files.</text>
   </view>
 
-  <view class="upload-box">
+  <view class="upload-box" bindtap="onChooseFile">
     <view class="upload-icon">↑</view>
     <text class="upload-main">Tap to browse files</text>
     <text class="upload-sub">or drag and drop here</text>
+  </view>
+  <view wx:if="{{selectedFileName}}" class="file-meta">
+    <text>{{selectedFileName}}</text>
+    <text>{{selectedFileSizeText}}</text>
   </view>
 </view>
 
@@ -39,7 +43,11 @@
   </view>
 
   <!-- Line Chart -->
-  <view class="card template-card">
+  <view
+    class="card template-card {{selectedChartType === 'line' ? 'template-active' : ''}}"
+    data-type="line"
+    bindtap="onSelectChartType"
+  >
     <view class="badge popular">POPULAR</view>
 
     <view class="template-row">
@@ -56,7 +64,11 @@
   </view>
 
   <!-- Scatter -->
-  <view class="card template-card">
+  <view
+    class="card template-card {{selectedChartType === 'scatter' ? 'template-active' : ''}}"
+    data-type="scatter"
+    bindtap="onSelectChartType"
+  >
     <view class="badge new">NEW</view>
 
     <view class="template-row">
@@ -76,7 +88,11 @@
   </view>
 
   <!-- Heatmap -->
-  <view class="card template-card">
+  <view
+    class="card template-card {{selectedChartType === 'heatmap' ? 'template-active' : ''}}"
+    data-type="heatmap"
+    bindtap="onSelectChartType"
+  >
     <view class="template-row">
       <view class="icon red">▦</view>
       <view>
@@ -88,10 +104,31 @@
 
 </view>
 
+<view wx:if="{{chartOptionText || errorMsg || isGenerating}}" class="card output-card">
+  <view class="output-head">
+    <text class="output-title">{{chartTitle || 'Generated Visualization'}}</text>
+    <text class="output-sub" wx:if="{{taskStatus}}">Status: {{taskStatus}}</text>
+  </view>
+
+  <view wx:if="{{isGenerating}}" class="state-text">AI 正在生成图表，请稍候...</view>
+  <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
+  <view wx:else>
+    <view wx:if="{{chartSummary}}" class="summary">{{chartSummary}}</view>
+    <view wx:if="{{chartInsights.length}}" class="insights">
+      <view wx:for="{{chartInsights}}" wx:key="index" class="insight-item">• {{item}}</view>
+    </view>
+    <view class="option-box">
+      <text class="option-text">{{chartOptionText}}</text>
+    </view>
+    <view class="copy-option-btn" bindtap="onCopyChartOption">复制图表配置（ECharts Option）</view>
+  </view>
+</view>
+
 <!-- Generate Button -->
 <view class="bottom-area">
-  <view class="generate-btn">
-    GENERATE CHART →
+  <view class="generate-btn" bindtap="onGenerateChart">
+    <text wx:if="{{isGenerating}}">GENERATING...</text>
+    <text wx:else>GENERATE CHART →</text>
   </view>
 </view>
 

@@ -185,6 +185,32 @@
     font-style: italic;
     margin-bottom: 35rpx;
   }
+
+  .output-text {
+    color: #1f2937;
+    font-style: normal;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    padding: 20rpx;
+  }
+
+  .improve-list {
+    margin-top: -10rpx;
+    margin-bottom: 24rpx;
+    color: #4b5563;
+    font-size: 22rpx;
+    line-height: 1.5;
+  }
+
+  .improve-item {
+    margin-bottom: 8rpx;
+  }
+
+  .error-text {
+    color: #dc2626;
+    font-size: 22rpx;
+    margin-bottom: 20rpx;
+  }
   
   /* 底部 */
   .output-footer {
