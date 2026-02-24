@@ -275,6 +275,20 @@
     gap: 20rpx;
     align-items: center;
   }
+
+  .recent-name {
+    display: block;
+    max-width: 430rpx;
+    font-size: 28rpx;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .recent-meta {
+    display: flex;
+    align-items: center;
+    margin-top: 8rpx;
+  }
   
   .recent-icon {
     width: 90rpx;
@@ -307,4 +321,12 @@
   .arrow {
     font-size: 40rpx;
     color: #cbd5e1;
+  }
+
+  .recent-empty {
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 24rpx;
+    padding: 28rpx;
+    margin-bottom: 20rpx;
+    text-align: center;
   }

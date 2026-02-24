@@ -2,14 +2,71 @@ const { request } = require("../../utils/request");
 
 const MIN_TEXT_LENGTH = 30;
 const MAX_TEXT_LENGTH = 20000;
+const RECENT_LIMIT = 10;
+
+function formatRecentTime(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+
+  const now = Date.now();
+  const diffMs = now - d.getTime();
+  if (diffMs < 60 * 1000) return "刚刚";
+  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+  }
+
+  const year = d.getFullYear();
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function mapRecentPolish(item) {
+  const inputPayload =
+    item && item.inputPayload && typeof item.inputPayload === "object"
+      ? item.inputPayload
+      : {};
+  const outputPayload =
+    item && item.outputPayload && typeof item.outputPayload === "object"
+      ? item.outputPayload
+      : {};
+
+  const inputText = String(inputPayload.text || "").trim();
+  const outputText = String(outputPayload.polishedText || "").trim();
+  const improvements = Array.isArray(outputPayload.improvements)
+    ? outputPayload.improvements.map((v) => String(v || "").trim()).filter(Boolean)
+    : [];
+  const tone = String(outputPayload.tone || "ACADEMIC")
+    .trim()
+    .toUpperCase();
+
+  return {
+    id: item.id,
+    title: String(item.title || "").trim(),
+    inputText,
+    outputText,
+    improvements,
+    tone,
+    toneLabel: tone === "FORMAL" ? "Formal" : "Academic",
+    timeText: formatRecentTime(item.createdAt),
+    inputPreview: String(item.inputPreview || inputText || "").trim(),
+  };
+}
 
 Page({
   data: {
     inputText: "",
     outputText: "",
     improvements: [],
+    recentItems: [],
+    isRecentLoading: false,
     isSubmitting: false,
     errorMsg: "",
+  },
+
+  onShow() {
+    this.fetchRecentPolishes();
   },
 
   handleAuthError(err) {
@@ -101,6 +158,7 @@ Page({
         outputText: String(result.polishedText || "").trim(),
         improvements: Array.isArray(result.improvements) ? result.improvements : [],
       });
+      this.fetchRecentPolishes();
     } catch (err) {
       if (this.handleAuthError(err)) return;
       const msg = err?.response?.message || "润色失败，请稍后重试";
@@ -131,6 +189,48 @@ Page({
           icon: "success",
         });
       },
+    });
+  },
+
+  async fetchRecentPolishes() {
+    if (this.data.isRecentLoading) return;
+    this.setData({ isRecentLoading: true });
+    try {
+      const resp = await request({
+        url: "/lab/academic-pls/recent",
+        method: "GET",
+        auth: true,
+        timeout: 20000,
+        data: {
+          limit: RECENT_LIMIT,
+        },
+      });
+      const items = Array.isArray(resp?.items) ? resp.items.map(mapRecentPolish) : [];
+      this.setData({ recentItems: items });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      this.setData({ recentItems: [] });
+    } finally {
+      this.setData({ isRecentLoading: false });
+    }
+  },
+
+  onTapRecentPolish(e) {
+    const index = Number(e.currentTarget?.dataset?.index);
+    if (!Number.isFinite(index) || index < 0) return;
+    const item = this.data.recentItems[index];
+    if (!item) return;
+
+    this.setData({
+      inputText: item.inputText || "",
+      outputText: item.outputText || "",
+      improvements: Array.isArray(item.improvements) ? item.improvements : [],
+      errorMsg: "",
+    });
+
+    wx.showToast({
+      title: "已载入历史润色",
+      icon: "none",
     });
   },
 });

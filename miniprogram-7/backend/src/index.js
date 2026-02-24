@@ -13,10 +13,25 @@ const jwtSecret = process.env.JWT_SECRET || "change_this_jwt_secret";
 const wechatAppId = process.env.WECHAT_APP_ID || "";
 const wechatAppSecret = process.env.WECHAT_APP_SECRET || "";
 const openAlexApiKey = process.env.OPENALEX_API_KEY || "";
+const DEFAULT_LLM_MODEL_POOL = [
+  "MiniMax/MiniMax-M2.5",
+  "moonshotai/Kimi-K2.5",
+  "ZhipuAI/GLM-5",
+  "Qwen/Qwen3.5-397B-A17B",
+];
 const llmApiKey = process.env.LLM_API_KEY || "";
 const llmBaseUrl = process.env.LLM_BASE_URL || "https://api-inference.modelscope.cn";
-const reviewModelName = process.env.REVIEW_MODEL_NAME || "deepseek-ai/DeepSeek-V3.2";
-const llmTimeoutMs = Number(process.env.LLM_TIMEOUT_MS || 45000);
+const configuredLlmModelPool = parseLlmModelPool(process.env.LLM_MODEL_POOL || "");
+const legacyReviewModelName = String(process.env.REVIEW_MODEL_NAME || "").trim();
+const llmModelPool = configuredLlmModelPool.length
+  ? configuredLlmModelPool
+  : legacyReviewModelName
+    ? [legacyReviewModelName, ...DEFAULT_LLM_MODEL_POOL].filter(
+        (model, index, arr) => arr.indexOf(model) === index
+      )
+    : DEFAULT_LLM_MODEL_POOL.slice();
+const llmTimeoutMs = Number(process.env.LLM_TIMEOUT_MS || 90000);
+const llmPerModelTimeoutMs = Number(process.env.LLM_PER_MODEL_TIMEOUT_MS || 30000);
 const defaultFeedKeywords =
   process.env.DEFAULT_FEED_KEYWORDS ||
   "large language model, retrieval augmented generation, computer vision";
@@ -25,6 +40,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const PAPER_ACTION_TYPES = new Set(["PASS", "MARK", "READ"]);
+const LAB_TOOL_TYPES = new Set(["ACADEMIC_PLS", "CITATIONS", "DATA_VIZ"]);
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PROJECT_COLOR_THEMES = new Set([
   "green",
@@ -107,6 +123,20 @@ function parsePositiveInt(value, fallback, max = 100) {
   return Math.min(parsed, max);
 }
 
+function parseLlmModelPool(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return [];
+  const items = raw
+    .split(/[,\n]/)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+  return items.filter((item, index) => items.indexOf(item) === index);
+}
+
+function getPrimaryLlmModel() {
+  return llmModelPool[0] || "";
+}
+
 function normalizeKeywords(value) {
   if (typeof value !== "string") return "";
   return value.replace(/\s+/g, " ").trim();
@@ -138,6 +168,146 @@ function normalizeChartType(value) {
   if (!raw) return "line";
   if (SUPPORTED_DATAVIZ_CHART_TYPES.has(raw)) return raw;
   return "line";
+}
+
+function normalizeLabToolType(value) {
+  const raw = String(value || "").trim().toUpperCase();
+  if (!raw) return "";
+  if (LAB_TOOL_TYPES.has(raw)) return raw;
+  return "";
+}
+
+function sanitizeRecentTitle(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120);
+}
+
+function buildRecentPreview(value, maxLength = 160) {
+  const text = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 3)}...`;
+}
+
+function mapLabRecentRow(row) {
+  const inputPayload =
+    row?.input_payload && typeof row.input_payload === "object" ? row.input_payload : {};
+  const outputPayload =
+    row?.output_payload && typeof row.output_payload === "object" ? row.output_payload : {};
+  const toolType = normalizeLabToolType(row?.tool_type);
+
+  let inputPreview = "";
+  let outputPreview = "";
+  if (toolType === "ACADEMIC_PLS") {
+    inputPreview = buildRecentPreview(inputPayload?.text || "");
+    outputPreview = buildRecentPreview(outputPayload?.polishedText || "");
+  } else if (toolType === "CITATIONS") {
+    inputPreview = buildRecentPreview(inputPayload?.text || "");
+    outputPreview = buildRecentPreview(outputPayload?.formattedText || "");
+  } else if (toolType === "DATA_VIZ") {
+    inputPreview = buildRecentPreview(
+      `${inputPayload?.fileName || ""} ${inputPayload?.chartType || ""}`
+    );
+    outputPreview = buildRecentPreview(
+      `${outputPayload?.title || ""} ${outputPayload?.summary || ""}`
+    );
+  } else {
+    inputPreview = buildRecentPreview(JSON.stringify(inputPayload));
+    outputPreview = buildRecentPreview(JSON.stringify(outputPayload));
+  }
+
+  return {
+    id: row.id,
+    toolType,
+    title: row.title || "",
+    inputPayload,
+    outputPayload,
+    inputPreview,
+    outputPreview,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function saveLabRecentRecord({
+  userId,
+  toolType,
+  title = "",
+  inputPayload = {},
+  outputPayload = {},
+}) {
+  const normalizedToolType = normalizeLabToolType(toolType);
+  if (!userId || !normalizedToolType) return;
+
+  await pool.query(
+    `
+      INSERT INTO lab_recent_records (
+        id,
+        user_id,
+        tool_type,
+        title,
+        input_payload,
+        output_payload
+      )
+      VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb);
+    `,
+    [
+      crypto.randomUUID(),
+      userId,
+      normalizedToolType,
+      sanitizeRecentTitle(title),
+      JSON.stringify(inputPayload || {}),
+      JSON.stringify(outputPayload || {}),
+    ]
+  );
+
+  // Keep only the latest 30 records per user+tool to control growth.
+  await pool.query(
+    `
+      DELETE FROM lab_recent_records
+      WHERE id IN (
+        SELECT id
+        FROM lab_recent_records
+        WHERE user_id = $1
+          AND tool_type = $2
+        ORDER BY created_at DESC
+        OFFSET 30
+      );
+    `,
+    [userId, normalizedToolType]
+  );
+}
+
+async function listLabRecentRecords({ userId, toolType, limit }) {
+  const normalizedToolType = normalizeLabToolType(toolType);
+  if (!userId || !normalizedToolType) return [];
+  const safeLimit = parsePositiveInt(limit, 10, 30);
+
+  const result = await pool.query(
+    `
+      SELECT
+        id,
+        user_id,
+        tool_type,
+        title,
+        input_payload,
+        output_payload,
+        created_at,
+        updated_at
+      FROM lab_recent_records
+      WHERE user_id = $1
+        AND tool_type = $2
+      ORDER BY created_at DESC
+      LIMIT $3;
+    `,
+    [userId, normalizedToolType, safeLimit]
+  );
+
+  return result.rows.map(mapLabRecentRow);
 }
 
 function normalizeEmail(value) {
@@ -374,6 +544,13 @@ function createHttpError(status, message, detail = null) {
   err.publicMessage = message;
   err.detail = detail;
   return err;
+}
+
+function extractLlmProviderError(payload, statusCode) {
+  if (payload?.error?.message) return String(payload.error.message);
+  if (payload?.errors?.message) return String(payload.errors.message);
+  if (payload?.message) return String(payload.message);
+  return `llm_http_${statusCode}`;
 }
 
 function buildLlmChatCompletionsUrl(rawBaseUrl) {
@@ -619,9 +796,9 @@ async function runReviewTask(taskId) {
       extension: task.extension,
       fileUrl: task.fileUrl,
     });
-    const review = await generateAiReviewFromManuscript(manuscript.text);
+    const reviewResult = await generateAiReviewFromManuscript(manuscript.text);
     task.status = "DONE";
-    task.review = review;
+    task.review = reviewResult.review;
     task.error = null;
     task.updatedAt = new Date().toISOString();
   } catch (err) {
@@ -632,65 +809,35 @@ async function runReviewTask(taskId) {
 }
 
 async function generateAiReviewFromManuscript(manuscriptText) {
-  if (!llmApiKey) {
-    throw createHttpError(500, "llm_config_missing");
-  }
-
-  const endpoint = buildLlmChatCompletionsUrl(llmBaseUrl);
-  const resp = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${llmApiKey}`,
-    },
-    body: JSON.stringify({
-      model: reviewModelName,
-      temperature: 0.2,
-      max_tokens: 1200,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a strict but constructive academic reviewer. Reply with JSON only.",
-        },
-        {
-          role: "user",
-          content: `Review this manuscript and return JSON with fields: decision (ACCEPT or REJECT), score (0-10), summary, strengths (array), weaknesses (array), suggestions (array).\n\nManuscript:\n${manuscriptText}`,
-        },
-      ],
-    }),
+  const completion = await requestLlmCompletion({
+    temperature: 0.2,
+    maxTokens: 1200,
+    messages: [
+      {
+        role: "system",
+        content:
+          "You are a strict but constructive academic reviewer. Reply with JSON only.",
+      },
+      {
+        role: "user",
+        content: `Review this manuscript and return JSON with fields: decision (ACCEPT or REJECT), score (0-10), summary, strengths (array), weaknesses (array), suggestions (array).\n\nManuscript:\n${manuscriptText}`,
+      },
+    ],
   });
 
-  const text = await resp.text();
-  let payload = {};
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = {};
-    }
-  }
-
-  if (!resp.ok) {
-    const providerError =
-      payload?.error?.message || payload?.message || `llm_http_${resp.status}`;
-    throw createHttpError(502, "llm_request_failed", providerError);
-  }
-
-  let content = payload?.choices?.[0]?.message?.content;
-  if (Array.isArray(content)) {
-    content = content.map((item) => item?.text || "").join("\n");
-  }
-  if (typeof content !== "string") {
-    content = payload?.choices?.[0]?.text || "";
-  }
-
-  const parsed = parseJsonFromLlmContent(content);
+  const parsed = parseJsonFromLlmContent(completion.content);
   if (!parsed) {
     throw createHttpError(502, "llm_response_invalid");
   }
 
-  return normalizeReviewResult(parsed);
+  return {
+    review: normalizeReviewResult(parsed),
+    llmMeta: {
+      model: completion.model,
+      endpoint: completion.endpoint,
+      attemptedModels: completion.attemptedModels || [],
+    },
+  };
 }
 
 async function requestLlmCompletion({
@@ -698,77 +845,135 @@ async function requestLlmCompletion({
   temperature = 0.2,
   maxTokens = 1200,
   responseFormat = null,
+  timeoutMs = null,
 }) {
   if (!llmApiKey) {
     throw createHttpError(500, "llm_config_missing");
   }
+  if (!llmModelPool.length) {
+    throw createHttpError(500, "llm_model_pool_empty");
+  }
   const endpoint = buildLlmChatCompletionsUrl(llmBaseUrl);
 
-  const body = {
-    model: reviewModelName,
+  const baseBody = {
     temperature,
     max_tokens: maxTokens,
     messages,
   };
   if (responseFormat) {
-    body.response_format = responseFormat;
+    baseBody.response_format = responseFormat;
   }
 
-  const controller = new AbortController();
-  const timeout = Number.isFinite(llmTimeoutMs) && llmTimeoutMs > 0 ? llmTimeoutMs : 45000;
-  const timer = setTimeout(() => controller.abort(), timeout);
-  let resp;
-  try {
-    resp = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${llmApiKey}`,
-      },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    if (err?.name === "AbortError") {
-      throw createHttpError(504, "llm_timeout");
+  const timeoutBudgetMs = Number.isFinite(Number(timeoutMs)) && Number(timeoutMs) > 0
+    ? Number(timeoutMs)
+    : Number.isFinite(llmTimeoutMs) && llmTimeoutMs > 0
+      ? llmTimeoutMs
+      : 90000;
+  const perModelTimeoutCap = Number.isFinite(llmPerModelTimeoutMs) && llmPerModelTimeoutMs > 0
+    ? llmPerModelTimeoutMs
+    : timeoutBudgetMs;
+  const startedAt = Date.now();
+  const attemptErrors = [];
+
+  for (let i = 0; i < llmModelPool.length; i += 1) {
+    const model = llmModelPool[i];
+    if (!model) continue;
+
+    const elapsed = Date.now() - startedAt;
+    const remainingBudget = timeoutBudgetMs - elapsed;
+    if (remainingBudget <= 0) {
+      attemptErrors.push({ model, reason: "timeout_budget_exhausted" });
+      continue;
     }
-    throw createHttpError(502, "llm_request_failed", String(err?.message || err));
-  } finally {
-    clearTimeout(timer);
-  }
 
-  const text = await resp.text();
-  let payload = {};
-  if (text) {
+    const singleAttemptTimeout = Math.max(
+      1200,
+      Math.min(remainingBudget, perModelTimeoutCap)
+    );
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), singleAttemptTimeout);
+    let resp;
     try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = {};
+      resp = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${llmApiKey}`,
+        },
+        body: JSON.stringify({
+          ...baseBody,
+          model,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        attemptErrors.push({ model, reason: "llm_timeout" });
+      } else {
+        attemptErrors.push({
+          model,
+          reason: String(err?.message || err).replace(/\s+/g, " ").slice(0, 220),
+        });
+      }
+      continue;
+    } finally {
+      clearTimeout(timer);
     }
+
+    const text = await resp.text();
+    let payload = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch {
+        payload = {};
+      }
+    }
+
+    if (!resp.ok) {
+      const providerError = extractLlmProviderError(payload, resp.status);
+      attemptErrors.push({
+        model,
+        reason: String(providerError).replace(/\s+/g, " ").slice(0, 220),
+      });
+      continue;
+    }
+
+    let content = payload?.choices?.[0]?.message?.content;
+    if (Array.isArray(content)) {
+      content = content.map((item) => item?.text || "").join("\n");
+    }
+    if (typeof content !== "string") {
+      content = payload?.choices?.[0]?.text || "";
+    }
+    if (!String(content || "").trim()) {
+      attemptErrors.push({ model, reason: "llm_response_empty" });
+      continue;
+    }
+
+    return {
+      content: String(content || ""),
+      payload,
+      endpoint,
+      model,
+      attemptedModels: llmModelPool.slice(0, i + 1),
+    };
   }
 
-  if (!resp.ok) {
-    const providerError =
-      payload?.error?.message || payload?.message || `llm_http_${resp.status}`;
-    throw createHttpError(502, "llm_request_failed", providerError);
+  const detail = attemptErrors
+    .map((item) => `${item.model}:${item.reason}`)
+    .join(" | ")
+    .slice(0, 1500);
+  const allTimeout =
+    attemptErrors.length > 0 &&
+    attemptErrors.every(
+      (item) =>
+        item.reason === "llm_timeout" || item.reason === "timeout_budget_exhausted"
+    );
+  if (allTimeout) {
+    throw createHttpError(504, "llm_timeout", detail || "all_models_timeout");
   }
-
-  let content = payload?.choices?.[0]?.message?.content;
-  if (Array.isArray(content)) {
-    content = content.map((item) => item?.text || "").join("\n");
-  }
-  if (typeof content !== "string") {
-    content = payload?.choices?.[0]?.text || "";
-  }
-  if (!String(content || "").trim()) {
-    throw createHttpError(502, "llm_response_empty");
-  }
-
-  return {
-    content: String(content || ""),
-    payload,
-    endpoint,
-  };
+  throw createHttpError(502, "llm_request_failed", detail || "all_models_failed");
 }
 
 function normalizeAcademicPolishResult(raw, fallbackText) {
@@ -843,40 +1048,95 @@ function splitCitationLines(text) {
     .slice(0, 120);
 }
 
+function buildHeuristicCitationLines(rawText, style) {
+  const normalizedStyle = normalizeCitationStyle(style);
+  const lines = splitCitationLines(rawText);
+  return lines.map((line, index) => {
+    const normalizedLine = String(line || "").replace(/\s+/g, " ").trim();
+    if (!normalizedLine) return "";
+    if (normalizedStyle === "MLA9" || normalizedStyle === "CHICAGO") {
+      return normalizedLine.endsWith(".") ? normalizedLine : `${normalizedLine}.`;
+    }
+    if (normalizedStyle === "APA7") {
+      return normalizedLine.endsWith(".") ? normalizedLine : `${normalizedLine}.`;
+    }
+    return lines.length > 1 ? `${index + 1}. ${normalizedLine}` : normalizedLine;
+  }).filter(Boolean);
+}
+
 async function generateCitationFormatting(rawText, style) {
-  const fallbackLines = splitCitationLines(rawText);
-  const completion = await requestLlmCompletion({
-    temperature: 0.1,
-    maxTokens: 1400,
-    messages: [
+  const fallbackLines = buildHeuristicCitationLines(rawText, style);
+  const citationLlmTimeoutMs = Number(process.env.CITATION_LLM_TIMEOUT_MS || 26000);
+  if (!llmApiKey) {
+    return normalizeCitationResult(
       {
-        role: "system",
-        content:
-          "You are a citation formatting assistant. Format references accurately. Never invent missing metadata. Reply JSON only.",
+        styleUsed: style,
+        detectedStyle: "AUTO",
+        formattedReferences: fallbackLines,
+        notes: ["LLM unavailable, returned normalized references."],
       },
-      {
-        role: "user",
-        content:
-          `Format the following references to style "${style}". If style is AUTO, detect best style and normalize consistently.\n` +
-          "Return JSON with fields: styleUsed, detectedStyle, formattedReferences (array), notes (array).\n\nReferences:\n" +
-          rawText,
-      },
-    ],
-  });
-  const parsed = parseJsonFromLlmContent(completion.content);
-  if (parsed) {
-    return normalizeCitationResult(parsed, fallbackLines, style);
+      fallbackLines,
+      style
+    );
   }
-  return normalizeCitationResult(
-    {
-      styleUsed: style,
-      detectedStyle: "AUTO",
-      formattedReferences: splitCitationLines(completion.content),
-      notes: [],
-    },
-    fallbackLines,
-    style
-  );
+
+  try {
+    const completion = await requestLlmCompletion({
+      temperature: 0.1,
+      maxTokens: 1400,
+      timeoutMs: citationLlmTimeoutMs,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a citation formatting assistant. Format references accurately. Never invent missing metadata. Reply JSON only.",
+        },
+        {
+          role: "user",
+          content:
+            `Format the following references to style "${style}". If style is AUTO, detect best style and normalize consistently.\n` +
+            "Return JSON with fields: styleUsed, detectedStyle, formattedReferences (array), notes (array).\n\nReferences:\n" +
+            rawText,
+        },
+      ],
+    });
+    const parsed = parseJsonFromLlmContent(completion.content);
+    if (parsed) {
+      return normalizeCitationResult(parsed, fallbackLines, style);
+    }
+    return normalizeCitationResult(
+      {
+        styleUsed: style,
+        detectedStyle: "AUTO",
+        formattedReferences: splitCitationLines(completion.content),
+        notes: [],
+      },
+      fallbackLines,
+      style
+    );
+  } catch (err) {
+    const fallbackReason = String(
+      err?.detail || err?.publicMessage || err?.message || "llm_error"
+    )
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 120);
+    console.warn("[lab/citations] llm fallback:", {
+      reason: fallbackReason,
+      style: normalizeCitationStyle(style),
+      inputChars: String(rawText || "").length,
+    });
+    return normalizeCitationResult(
+      {
+        styleUsed: style,
+        detectedStyle: "AUTO",
+        formattedReferences: fallbackLines,
+        notes: [`Fallback used (${fallbackReason || "llm_error"})`],
+      },
+      fallbackLines,
+      style
+    );
+  }
 }
 
 function coerceCellValue(value) {
@@ -1398,6 +1658,29 @@ async function runDataVizTask(taskId) {
         rows: dataset.rows.length,
       },
     };
+    try {
+      await saveLabRecentRecord({
+        userId: task.userId,
+        toolType: "DATA_VIZ",
+        title: task.result.title || `DataViz ${task.chartType}`,
+        inputPayload: {
+          fileName: task.fileName,
+          chartType: task.chartType,
+          extension: dataset.extension,
+          rows: dataset.rows.length,
+          columns: dataset.columns,
+        },
+        outputPayload: {
+          chartType: task.result.chartType,
+          title: task.result.title,
+          summary: task.result.summary,
+          insights: task.result.insights,
+          echartsOption: task.result.echartsOption,
+          provider: task.result.provider,
+          datasetMeta: task.result.datasetMeta,
+        },
+      });
+    } catch {}
     task.updatedAt = new Date().toISOString();
   } catch (err) {
     task.status = "FAILED";
@@ -3309,10 +3592,23 @@ app.post("/lab/academic-pls", authMiddleware, async (req, res) => {
     }
 
     const result = await generateAcademicPolish(rawText);
+    try {
+      await saveLabRecentRecord({
+        userId: req.auth.userId,
+        toolType: "ACADEMIC_PLS",
+        title: `Polish: ${rawText.slice(0, 48)}`,
+        inputPayload: {
+          text: rawText,
+        },
+        outputPayload: result,
+      });
+    } catch {}
+
     return res.status(200).json({
       result,
       meta: {
-        model: reviewModelName,
+        model: getPrimaryLlmModel(),
+        modelPool: llmModelPool,
         endpoint: buildLlmChatCompletionsUrl(llmBaseUrl),
         inputChars: rawText.length,
         outputChars: result.polishedText.length,
@@ -3339,10 +3635,24 @@ app.post("/lab/citations/format", authMiddleware, async (req, res) => {
     }
 
     const result = await generateCitationFormatting(rawText, style);
+    try {
+      await saveLabRecentRecord({
+        userId: req.auth.userId,
+        toolType: "CITATIONS",
+        title: `Citation: ${style}`,
+        inputPayload: {
+          text: rawText,
+          styleRequested: style,
+        },
+        outputPayload: result,
+      });
+    } catch {}
+
     return res.status(200).json({
       result,
       meta: {
-        model: reviewModelName,
+        model: getPrimaryLlmModel(),
+        modelPool: llmModelPool,
         endpoint: buildLlmChatCompletionsUrl(llmBaseUrl),
         inputChars: rawText.length,
         outputRefs: result.formattedReferences.length,
@@ -3353,6 +3663,60 @@ app.post("/lab/citations/format", authMiddleware, async (req, res) => {
     return res.status(status).json({
       message: err?.publicMessage || "citation_format_failed",
       detail: err?.detail || String(err?.message || err),
+    });
+  }
+});
+
+app.get("/lab/academic-pls/recent", authMiddleware, async (req, res) => {
+  try {
+    const items = await listLabRecentRecords({
+      userId: req.auth.userId,
+      toolType: "ACADEMIC_PLS",
+      limit: req.query.limit,
+    });
+    return res.status(200).json({
+      items,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "academic_recent_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get("/lab/citations/recent", authMiddleware, async (req, res) => {
+  try {
+    const items = await listLabRecentRecords({
+      userId: req.auth.userId,
+      toolType: "CITATIONS",
+      limit: req.query.limit,
+    });
+    return res.status(200).json({
+      items,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "citation_recent_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get("/lab/data-viz/recent", authMiddleware, async (req, res) => {
+  try {
+    const items = await listLabRecentRecords({
+      userId: req.auth.userId,
+      toolType: "DATA_VIZ",
+      limit: req.query.limit,
+    });
+    return res.status(200).json({
+      items,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "dataviz_recent_list_failed",
+      detail: String(err?.message || err),
     });
   }
 });
@@ -3484,13 +3848,16 @@ app.post("/lab/review-simulator", authMiddleware, async (req, res) => {
       contentBase64,
       fileUrl,
     });
-    const review = await generateAiReviewFromManuscript(manuscript.text);
+    const reviewResult = await generateAiReviewFromManuscript(manuscript.text);
 
     return res.status(200).json({
-      review,
+      review: reviewResult.review,
       meta: {
-        model: reviewModelName,
-        endpoint: buildLlmChatCompletionsUrl(llmBaseUrl),
+        model: reviewResult.llmMeta?.model || getPrimaryLlmModel(),
+        modelPool: llmModelPool,
+        attemptedModels: reviewResult.llmMeta?.attemptedModels || [],
+        endpoint:
+          reviewResult.llmMeta?.endpoint || buildLlmChatCompletionsUrl(llmBaseUrl),
         inputChars: manuscript.text.length,
         fileType: manuscript.extension,
       },
@@ -3510,4 +3877,7 @@ app.use((_req, res) => {
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`Research Pilot backend listening on ${port}`);
+  console.log(
+    `[llm] endpoint=${buildLlmChatCompletionsUrl(llmBaseUrl)} model_pool=${llmModelPool.join(",")}`
+  );
 });

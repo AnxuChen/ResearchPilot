@@ -59,8 +59,24 @@ model User {
   aiJobs      AiJob[]
   badges      UserBadge[]
   projectDeadlines ProjectDeadline[]
+  labRecentRecords LabRecentRecord[]
 
   @@map("users")
+}
+
+model LabRecentRecord {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  toolType      String   @map("tool_type")
+  title         String   @default("")
+  inputPayload  Json     @map("input_payload")
+  outputPayload Json     @map("output_payload")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, toolType, createdAt], map: "idx_lab_recent_user_tool_created_at")
+  @@map("lab_recent_records")
 }
 
 model UserPreference {

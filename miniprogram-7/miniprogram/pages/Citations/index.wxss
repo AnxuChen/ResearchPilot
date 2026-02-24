@@ -293,6 +293,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20rpx;
   }
   
   .recent-left {
@@ -338,4 +339,12 @@
   .arrow {
     font-size: 40rpx;
     color: #cbd5e1;
+  }
+
+  .recent-empty {
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 24rpx;
+    padding: 28rpx;
+    margin-bottom: 20rpx;
+    text-align: center;
   }

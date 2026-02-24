@@ -1,4 +1,6 @@
 const { request } = require("../../utils/request");
+const MAX_INPUT_CHARS = 500;
+const RECENT_LIMIT = 10;
 
 const STYLE_OPTIONS = [
   { value: "APA7", label: "APA 7" },
@@ -6,6 +8,67 @@ const STYLE_OPTIONS = [
   { value: "CHICAGO", label: "Chicago" },
   { value: "AUTO", label: "✨ Auto-Detect" },
 ];
+const STYLE_SET = new Set(STYLE_OPTIONS.map((item) => item.value));
+
+function formatRecentTime(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 60 * 1000) return "刚刚";
+  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
+  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+  const year = d.getFullYear();
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function normalizeStyle(value, fallback = "AUTO") {
+  const style = String(value || "").trim().toUpperCase();
+  if (!style) return fallback;
+  if (style === "APA") return "APA7";
+  if (style === "MLA") return "MLA9";
+  if (STYLE_SET.has(style)) return style;
+  return fallback;
+}
+
+function mapRecentFormat(item) {
+  const inputPayload =
+    item && item.inputPayload && typeof item.inputPayload === "object"
+      ? item.inputPayload
+      : {};
+  const outputPayload =
+    item && item.outputPayload && typeof item.outputPayload === "object"
+      ? item.outputPayload
+      : {};
+
+  const inputText = String(inputPayload.text || "").trim();
+  const styleRequested = normalizeStyle(inputPayload.styleRequested, "AUTO");
+  const styleUsed = normalizeStyle(outputPayload.styleUsed, styleRequested);
+  const detectedStyle = normalizeStyle(outputPayload.detectedStyle, "AUTO");
+  const formattedReferences = Array.isArray(outputPayload.formattedReferences)
+    ? outputPayload.formattedReferences.map((v) => String(v || "").trim()).filter(Boolean)
+    : [];
+  const formattedText = String(
+    outputPayload.formattedText || formattedReferences.join("\n")
+  ).trim();
+  const notes = Array.isArray(outputPayload.notes)
+    ? outputPayload.notes.map((v) => String(v || "").trim()).filter(Boolean)
+    : [];
+
+  return {
+    id: item.id,
+    title: String(item.title || "").trim(),
+    inputText,
+    styleRequested,
+    styleUsed,
+    detectedStyle,
+    formattedText,
+    notes,
+    timeText: formatRecentTime(item.createdAt),
+    inputPreview: String(item.inputPreview || inputText || "").trim(),
+  };
+}
 
 Page({
   data: {
@@ -16,8 +79,14 @@ Page({
     styleUsed: "",
     detectedStyle: "",
     notes: [],
+    recentItems: [],
+    isRecentLoading: false,
     isSubmitting: false,
     errorMsg: "",
+  },
+
+  onShow() {
+    this.fetchRecentFormats();
   },
 
   handleAuthError(err) {
@@ -33,8 +102,9 @@ Page({
   },
 
   onInputText(e) {
+    const text = String(e.detail.value || "").slice(0, MAX_INPUT_CHARS);
     this.setData({
-      inputText: e.detail.value || "",
+      inputText: text,
       errorMsg: "",
     });
   },
@@ -53,8 +123,9 @@ Page({
   onPasteInput() {
     wx.getClipboardData({
       success: (res) => {
+        const pasted = String(res?.data || "").slice(0, MAX_INPUT_CHARS);
         this.setData({
-          inputText: String(res?.data || ""),
+          inputText: pasted,
           errorMsg: "",
         });
       },
@@ -103,6 +174,7 @@ Page({
         detectedStyle: String(result.detectedStyle || ""),
         notes: Array.isArray(result.notes) ? result.notes : [],
       });
+      this.fetchRecentFormats();
     } catch (err) {
       if (this.handleAuthError(err)) return;
       const msg = err?.response?.message || "格式化失败，请稍后重试";
@@ -124,6 +196,51 @@ Page({
       success: () => {
         wx.showToast({ title: "已复制", icon: "success" });
       },
+    });
+  },
+
+  async fetchRecentFormats() {
+    if (this.data.isRecentLoading) return;
+    this.setData({ isRecentLoading: true });
+    try {
+      const resp = await request({
+        url: "/lab/citations/recent",
+        method: "GET",
+        auth: true,
+        timeout: 20000,
+        data: {
+          limit: RECENT_LIMIT,
+        },
+      });
+      const items = Array.isArray(resp?.items) ? resp.items.map(mapRecentFormat) : [];
+      this.setData({ recentItems: items });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      this.setData({ recentItems: [] });
+    } finally {
+      this.setData({ isRecentLoading: false });
+    }
+  },
+
+  onTapRecentFormat(e) {
+    const index = Number(e.currentTarget?.dataset?.index);
+    if (!Number.isFinite(index) || index < 0) return;
+    const item = this.data.recentItems[index];
+    if (!item) return;
+
+    this.setData({
+      inputText: item.inputText || "",
+      selectedStyle: normalizeStyle(item.styleRequested, "AUTO"),
+      outputText: item.formattedText || "",
+      styleUsed: item.styleUsed || "",
+      detectedStyle: item.detectedStyle || "",
+      notes: Array.isArray(item.notes) ? item.notes : [],
+      errorMsg: "",
+    });
+
+    wx.showToast({
+      title: "已载入历史格式化",
+      icon: "none",
     });
   },
 });

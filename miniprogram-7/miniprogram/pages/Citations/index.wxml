@@ -39,6 +39,7 @@
     class="textarea"
     value="{{inputText}}"
     bindinput="onInputText"
+    maxlength="500"
     placeholder="e.g. Smith, J. (2020). The future of AI. Journal of Tech, 12(3), 45-67."
   />
 
@@ -104,17 +105,31 @@
 <view class="recent-section">
   <view class="recent-header">
     <text class="recent-title">Recent Formats</text>
-    <text class="view-all">VIEW ALL</text>
+    <text class="view-all" bindtap="fetchRecentFormats">REFRESH</text>
   </view>
 
-  <view class="recent-card">
+  <view wx:if="{{isRecentLoading && recentItems.length === 0}}" class="recent-empty">
+    <text class="meta-time">Loading...</text>
+  </view>
+
+  <view wx:if="{{!isRecentLoading && recentItems.length === 0}}" class="recent-empty">
+    <text class="meta-time">No recent formats yet.</text>
+  </view>
+
+  <view
+    wx:for="{{recentItems}}"
+    wx:key="id"
+    class="recent-card"
+    data-index="{{index}}"
+    bindtap="onTapRecentFormat"
+  >
     <view class="recent-left">
       <view class="recent-icon">📄</view>
       <view>
-        <text class="recent-name">Nature Journal Ref.</text>
+        <text class="recent-name">{{item.title || item.inputPreview || 'Untitled Format'}}</text>
         <view class="recent-meta">
-          <text class="meta-tag">APA</text>
-          <text class="meta-time">2m ago</text>
+          <text class="meta-tag">{{item.styleUsed || item.styleRequested || 'AUTO'}}</text>
+          <text class="meta-time">{{item.timeText}}</text>
         </view>
       </view>
     </view>

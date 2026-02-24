@@ -87,31 +87,31 @@
 <view class="recent-section">
   <view class="recent-header">
     <text class="recent-title">Recent Polishes</text>
-    <text class="view-all">VIEW ALL</text>
+    <text class="view-all" bindtap="fetchRecentPolishes">REFRESH</text>
   </view>
 
-  <view class="recent-card">
+  <view wx:if="{{isRecentLoading && recentItems.length === 0}}" class="recent-empty">
+    <text class="meta-time">Loading...</text>
+  </view>
+
+  <view wx:if="{{!isRecentLoading && recentItems.length === 0}}" class="recent-empty">
+    <text class="meta-time">No recent polishes yet.</text>
+  </view>
+
+  <view
+    wx:for="{{recentItems}}"
+    wx:key="id"
+    class="recent-card"
+    data-index="{{index}}"
+    bindtap="onTapRecentPolish"
+  >
     <view class="recent-left">
       <view class="recent-icon orange">Tt</view>
       <view>
-        <text class="recent-name">Abstract: Neural Netw...</text>
+        <text class="recent-name">{{item.title || item.inputPreview || 'Untitled Polish'}}</text>
         <view class="recent-meta">
-          <text class="meta-tag purple">Formal</text>
-          <text class="meta-time">5m ago</text>
-        </view>
-      </view>
-    </view>
-    <text class="arrow">›</text>
-  </view>
-
-  <view class="recent-card">
-    <view class="recent-left">
-      <view class="recent-icon teal">📄</view>
-      <view>
-        <text class="recent-name">Intro: Quantum Comp...</text>
-        <view class="recent-meta">
-          <text class="meta-tag teal-tag">Academic</text>
-          <text class="meta-time">2h ago</text>
+          <text class="meta-tag purple">{{item.toneLabel}}</text>
+          <text class="meta-time">{{item.timeText}}</text>
         </view>
       </view>
     </view>

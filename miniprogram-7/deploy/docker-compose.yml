@@ -52,6 +52,10 @@ services:
       WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL_POOL: ${LLM_MODEL_POOL:-}
+      LLM_TIMEOUT_MS: ${LLM_TIMEOUT_MS:-90000}
+      LLM_PER_MODEL_TIMEOUT_MS: ${LLM_PER_MODEL_TIMEOUT_MS:-30000}
+      CITATION_LLM_TIMEOUT_MS: ${CITATION_LLM_TIMEOUT_MS:-26000}
       OPENALEX_API_KEY: ${OPENALEX_API_KEY:-}
       DEFAULT_FEED_KEYWORDS: ${DEFAULT_FEED_KEYWORDS:-large language model, retrieval augmented generation, computer vision}
     depends_on:
