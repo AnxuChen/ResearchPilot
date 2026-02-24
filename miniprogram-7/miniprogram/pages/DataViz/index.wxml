@@ -114,13 +114,25 @@
   <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
   <view wx:else>
     <view wx:if="{{chartSummary}}" class="summary">{{chartSummary}}</view>
+    <view wx:if="{{chartProvider}}" class="provider-pill">Provider: {{chartProvider}}</view>
     <view wx:if="{{chartInsights.length}}" class="insights">
       <view wx:for="{{chartInsights}}" wx:key="index" class="insight-item">• {{item}}</view>
     </view>
-    <view class="option-box">
+    <view wx:if="{{chartOption}}" class="chart-box">
+      <canvas id="chartCanvas" canvas-id="chartCanvas" class="chart-canvas"></canvas>
+    </view>
+    <view wx:if="{{chartRenderHint}}" class="state-text">{{chartRenderHint}}</view>
+    <view class="option-actions">
+      <view class="copy-option-btn" bindtap="onToggleOptionText">
+        {{showOptionText ? '隐藏配置 JSON' : '查看配置 JSON'}}
+      </view>
+      <view class="copy-option-btn copy-secondary" bindtap="onCopyChartOption">
+        复制图表配置（ECharts Option）
+      </view>
+    </view>
+    <view wx:if="{{showOptionText}}" class="option-box">
       <text class="option-text">{{chartOptionText}}</text>
     </view>
-    <view class="copy-option-btn" bindtap="onCopyChartOption">复制图表配置（ECharts Option）</view>
   </view>
 </view>
 
