@@ -60,6 +60,7 @@ Page({
     isFavorite: false,
     isFavoriteSubmitting: false,
     isCommentSubmitting: false,
+    hasMarkedRead: false,
   },
 
   onLoad(options) {
@@ -71,7 +72,10 @@ Page({
       });
       return;
     }
-    this.setData({ paperId });
+    this.setData({
+      paperId,
+      hasMarkedRead: false,
+    });
     this.reloadPageData();
   },
 
@@ -131,6 +135,11 @@ Page({
         paper,
         isFavorite: Boolean(resp.likedByMe),
       });
+
+      if (!this.data.hasMarkedRead) {
+        this.setData({ hasMarkedRead: true });
+        this.markPaperAsRead(paperId);
+      }
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
@@ -273,6 +282,22 @@ Page({
       }
     } finally {
       this.setData({ isFavoriteSubmitting: false });
+    }
+  },
+
+  async markPaperAsRead(paperId) {
+    if (!paperId) return;
+    try {
+      await request({
+        url: `/papers/${encodeURIComponent(paperId)}/action`,
+        method: "POST",
+        auth: true,
+        data: {
+          action: "READ",
+        },
+      });
+    } catch (err) {
+      this.handleAuthError(err);
     }
   },
 

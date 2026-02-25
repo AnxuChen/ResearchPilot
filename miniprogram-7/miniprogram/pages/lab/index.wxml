@@ -88,25 +88,40 @@
   <view class="list-section">
     <view class="section-header">
       <view class="flex-row">
-        <text class="section-title">Active Quests</text>
-        <view class="badge-count">3 ONGOING</view>
+        <text class="section-title">Recent Reading</text>
+        <view class="badge-count">{{recentReadings.length}} ITEMS</view>
       </view>
-      <text class="link-text">VIEW ALL</text>
     </view>
 
-    <view class="card list-item">
-      <view class="icon-square bg-teal-light">
-        <image class="icon-md" src="/images/lab/brain.png"></image>
-      </view>
-      <view class="list-content">
-        <text class="list-title">Neural Optimization</text>
-        <view class="list-meta">
-          <text class="tag-running">RUNNING</text>
-          <text class="time-ago">2H AGO</text>
-        </view>
-      </view>
-      <text class="arrow-gray">></text>
+    <view wx:if="{{recentReadingLoading && recentReadings.length === 0}}" class="card list-item list-empty">
+      <text class="list-empty-text">Loading recent reading...</text>
     </view>
+
+    <view wx:elif="{{recentReadings.length === 0}}" class="card list-item list-empty">
+      <text class="list-empty-text">No recent reading yet.</text>
+    </view>
+
+    <block wx:else>
+      <view
+        class="card list-item"
+        wx:for="{{recentReadings}}"
+        wx:key="id"
+        data-id="{{item.id}}"
+        bindtap="onOpenRecentReading"
+      >
+        <view class="icon-square">
+          <image class="icon-md" src="/images/lab/brain.png"></image>
+        </view>
+        <view class="list-content">
+          <text class="list-title">{{item.title}}</text>
+          <view class="list-meta">
+            <text class="tag-running">READ</text>
+            <text class="time-ago">{{item.readAtText}}</text>
+          </view>
+        </view>
+        <text class="arrow-gray">></text>
+      </view>
+    </block>
   </view>
 
   <view style="height: 120px;"></view>

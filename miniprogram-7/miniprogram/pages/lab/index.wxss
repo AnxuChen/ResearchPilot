@@ -393,13 +393,18 @@ page {
   
   .list-content {
     flex: 1;
+    min-width: 0;
   }
   
   .list-title {
+    width: 100%;
     font-size: 15px;
     font-weight: bold;
     color: #111;
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .list-meta {
@@ -427,6 +432,16 @@ page {
   .arrow-gray {
     color: #D1D5DB;
     font-size: 20px;
+  }
+
+  .list-empty {
+    justify-content: center;
+    width: 300px;
+  }
+
+  .list-empty-text {
+    font-size: 13px;
+    color: #6B7280;
   }
   
   /* Icon 图片通用尺寸 */

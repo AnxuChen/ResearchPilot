@@ -3684,6 +3684,49 @@ app.get("/profile/dashboard", authMiddleware, async (req, res) => {
   }
 });
 
+app.get("/lab/recent-reading", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.auth.userId;
+    const result = await pool.query(
+      `
+        SELECT
+          p.id,
+          p.title,
+          p.authors,
+          p.abstract,
+          p.published_at,
+          upa.updated_at AS read_at
+        FROM user_paper_actions upa
+        INNER JOIN papers p
+          ON p.id = upa.paper_id
+        WHERE upa.user_id = $1
+          AND upa.action = 'READ'
+        ORDER BY upa.updated_at DESC
+        LIMIT 2;
+      `,
+      [userId]
+    );
+
+    const items = result.rows.map((row) => ({
+      id: row.id,
+      title: row.title || "Untitled Paper",
+      authors: Array.isArray(row.authors) ? row.authors : [],
+      abstract: row.abstract || "",
+      publishedAt: row.published_at,
+      readAt: row.read_at,
+    }));
+
+    return res.status(200).json({
+      items,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "recent_reading_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
 app.post("/lab/academic-pls", authMiddleware, async (req, res) => {
   try {
     const rawText = String(req.body?.text || "").trim();
