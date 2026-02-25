@@ -2,6 +2,7 @@ const { request } = require("../../utils/request");
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const SUPPORTED_EXTENSIONS = ["pdf", "txt", "md"];
+const RECENT_LIMIT = 10;
 
 function formatFileSize(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 KB";
@@ -22,6 +23,27 @@ function basename(filePath = "") {
   return parts[parts.length - 1] || "";
 }
 
+function formatRecentTime(value) {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const diffMs = Date.now() - d.getTime();
+  if (diffMs < 60 * 1000) return "just now";
+  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
+  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+  const year = d.getFullYear();
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function recentIconClass(extension) {
+  const ext = String(extension || "").trim().toLowerCase();
+  if (ext === "pdf") return "pdf-icon";
+  if (ext === "txt") return "txt-icon";
+  if (ext === "md") return "md-icon";
+  return "default-icon";
+}
+
 function normalizeReview(review) {
   const safe = review || {};
   return {
@@ -31,6 +53,36 @@ function normalizeReview(review) {
     strengths: Array.isArray(safe.strengths) ? safe.strengths : [],
     weaknesses: Array.isArray(safe.weaknesses) ? safe.weaknesses : [],
     suggestions: Array.isArray(safe.suggestions) ? safe.suggestions : [],
+  };
+}
+
+function mapRecentSimulation(item) {
+  const inputPayload =
+    item && item.inputPayload && typeof item.inputPayload === "object"
+      ? item.inputPayload
+      : {};
+  const outputPayload =
+    item && item.outputPayload && typeof item.outputPayload === "object"
+      ? item.outputPayload
+      : {};
+  const rawReview =
+    outputPayload.review && typeof outputPayload.review === "object"
+      ? outputPayload.review
+      : outputPayload;
+  const review = normalizeReview(rawReview);
+  const fileName = String(inputPayload.fileName || item?.title || "Manuscript").trim();
+  const extension = String(
+    inputPayload.extension || extFromFileName(fileName) || ""
+  ).toLowerCase();
+  return {
+    id: item.id,
+    fileName: fileName || "Manuscript",
+    extension,
+    iconClass: recentIconClass(extension),
+    timeText: formatRecentTime(item?.createdAt),
+    scoreText: `${review.score}/10`,
+    decision: review.decision,
+    review,
   };
 }
 
@@ -97,10 +149,28 @@ Page({
     reviewTaskId: "",
     reviewStatus: "",
     reviewResult: null,
+    recentItems: [],
+    isRecentLoading: false,
+  },
+
+  onShow() {
+    this.fetchRecentSimulations();
   },
 
   onUnload() {
     this.stopReviewPolling();
+  },
+
+  handleAuthError(err) {
+    if (err.statusCode === 401 || err.message === "missing_token") {
+      wx.removeStorageSync("token");
+      wx.removeStorageSync("user");
+      wx.reLaunch({
+        url: "/pages/login/login",
+      });
+      return true;
+    }
+    return false;
   },
 
   stopReviewPolling() {
@@ -138,6 +208,7 @@ Page({
           reviewStatus: "DONE",
           reviewResult: normalizeReview(task.review || {}),
         });
+        this.fetchRecentSimulations();
         return;
       }
 
@@ -151,7 +222,7 @@ Page({
           reviewStatus: "FAILED",
         });
         wx.showToast({
-          title: task.error || "审稿失败，请重试",
+          title: task.error || "Review failed, please retry",
           icon: "none",
         });
         return;
@@ -164,6 +235,7 @@ Page({
       this.pollErrorCount = 0;
       this.scheduleNextPoll(taskId);
     } catch (err) {
+      if (this.handleAuthError(err)) return;
       this.pollErrorCount = (this.pollErrorCount || 0) + 1;
       if (this.pollErrorCount >= 5) {
         this.stopReviewPolling();
@@ -173,7 +245,7 @@ Page({
           reviewStatus: "FAILED",
         });
         wx.showToast({
-          title: "审稿超时，请稍后重试",
+          title: "Review timed out, try again later",
           icon: "none",
         });
         return;
@@ -190,12 +262,12 @@ Page({
       success: (res) => {
         const file = Array.isArray(res?.tempFiles) ? res.tempFiles[0] : null;
         if (!file?.path) {
-          wx.showToast({ title: "未选择文件", icon: "none" });
+          wx.showToast({ title: "No file selected", icon: "none" });
           return;
         }
         if (file.size > MAX_FILE_SIZE_BYTES) {
           wx.showToast({
-            title: "文件过大，请控制在50MB内",
+            title: "File too large (max 50MB)",
             icon: "none",
           });
           return;
@@ -205,7 +277,7 @@ Page({
         const extension = extFromFileName(fileName);
         if (!SUPPORTED_EXTENSIONS.includes(extension)) {
           wx.showToast({
-            title: "仅支持 PDF/TXT/MD",
+            title: "Only PDF/TXT/MD supported",
             icon: "none",
           });
           return;
@@ -222,7 +294,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "文件选择已取消",
+          title: "File selection canceled",
           icon: "none",
         });
       },
@@ -232,7 +304,7 @@ Page({
   async onStartReview() {
     if (this.data.isReviewing) return;
     if (!this.data.selectedFilePath || !this.data.selectedFileName) {
-      wx.showToast({ title: "请先上传论文稿件", icon: "none" });
+      wx.showToast({ title: "Please upload a manuscript first", icon: "none" });
       return;
     }
 
@@ -276,12 +348,97 @@ Page({
       this.pollReviewTask(taskId);
     } catch (err) {
       await deleteCloudFile(uploadedFileId);
-      const msg = err?.response?.message || err?.errMsg || "审稿失败，请稍后重试";
+      if (this.handleAuthError(err)) return;
+      const msg = err?.response?.message || err?.errMsg || "Review failed, please try again later";
       wx.showToast({ title: msg, icon: "none" });
       this.setData({
         isReviewing: false,
         reviewTaskId: "",
         reviewStatus: "",
+      });
+    }
+  },
+
+  async fetchRecentSimulations() {
+    if (this.data.isRecentLoading) return;
+    this.setData({ isRecentLoading: true });
+    try {
+      const resp = await request({
+        url: "/lab/review-simulator/recent",
+        method: "GET",
+        auth: true,
+        timeout: 20000,
+        data: {
+          limit: RECENT_LIMIT,
+        },
+      });
+      const items = Array.isArray(resp?.items)
+        ? resp.items.map(mapRecentSimulation)
+        : [];
+      this.setData({
+        recentItems: items,
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      this.setData({
+        recentItems: [],
+      });
+    } finally {
+      this.setData({ isRecentLoading: false });
+    }
+  },
+
+  onTapRecentSimulation(e) {
+    const index = Number(e.currentTarget?.dataset?.index);
+    if (!Number.isFinite(index) || index < 0) return;
+    const item = this.data.recentItems[index];
+    if (!item) return;
+
+    this.setData({
+      reviewResult: normalizeReview(item.review || {}),
+      selectedFileName: item.fileName || "",
+    });
+    wx.showToast({
+      title: "Loaded from recent history",
+      icon: "none",
+    });
+  },
+
+  async onDeleteRecentSimulation(e) {
+    const recordId = String(e.currentTarget?.dataset?.id || "").trim();
+    if (!recordId) return;
+
+    const confirm = await new Promise((resolve) => {
+      wx.showModal({
+        title: "Delete record",
+        content: "Delete this simulation from recent history?",
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        success: (res) => resolve(Boolean(res?.confirm)),
+        fail: () => resolve(false),
+      });
+    });
+    if (!confirm) return;
+
+    try {
+      await request({
+        url: `/lab/review-simulator/recent/${encodeURIComponent(recordId)}`,
+        method: "DELETE",
+        auth: true,
+        timeout: 15000,
+      });
+      this.setData({
+        recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
+      });
+      wx.showToast({
+        title: "Deleted",
+        icon: "success",
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      wx.showToast({
+        title: "Delete failed",
+        icon: "none",
       });
     }
   },

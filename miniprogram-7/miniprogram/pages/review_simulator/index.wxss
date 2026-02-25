@@ -194,6 +194,14 @@ page {
   .txt-icon {
     background: linear-gradient(135deg, #60a5fa, #3b82f6);
   }
+
+  .md-icon {
+    background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+  }
+
+  .default-icon {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+  }
   
   .recent-info {
     flex: 1;
@@ -227,6 +235,31 @@ page {
   .score-label {
     font-size: 22rpx;
     color: #6b7280;
+  }
+
+  .recent-delete-btn {
+    margin-top: 10rpx;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 82rpx;
+    height: 44rpx;
+    padding: 0 14rpx;
+    border-radius: 999rpx;
+    font-size: 20rpx;
+    color: #b91c1c;
+    border: 1rpx solid #fecaca;
+    background: #fff5f5;
+  }
+
+  .recent-empty {
+    background: #ffffff;
+    border-radius: 22rpx;
+    padding: 24rpx;
+    color: #64748b;
+    font-size: 24rpx;
+    text-align: center;
+    box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.05);
   }
   
   /* ===== 评审说明 ===== */

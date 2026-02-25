@@ -40,7 +40,12 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 const PAPER_ACTION_TYPES = new Set(["PASS", "MARK", "READ"]);
-const LAB_TOOL_TYPES = new Set(["ACADEMIC_PLS", "CITATIONS", "DATA_VIZ"]);
+const LAB_TOOL_TYPES = new Set([
+  "ACADEMIC_PLS",
+  "CITATIONS",
+  "DATA_VIZ",
+  "REVIEW_SIMULATOR",
+]);
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PROJECT_COLOR_THEMES = new Set([
   "green",
@@ -215,6 +220,15 @@ function mapLabRecentRow(row) {
     outputPreview = buildRecentPreview(
       `${outputPayload?.title || ""} ${outputPayload?.summary || ""}`
     );
+  } else if (toolType === "REVIEW_SIMULATOR") {
+    const reviewPayload =
+      outputPayload?.review && typeof outputPayload.review === "object"
+        ? outputPayload.review
+        : outputPayload;
+    inputPreview = buildRecentPreview(inputPayload?.fileName || "");
+    outputPreview = buildRecentPreview(
+      `${reviewPayload?.decision || ""} ${reviewPayload?.score ?? ""} ${reviewPayload?.summary || ""}`
+    );
   } else {
     inputPreview = buildRecentPreview(JSON.stringify(inputPayload));
     outputPreview = buildRecentPreview(JSON.stringify(outputPayload));
@@ -233,6 +247,45 @@ function mapLabRecentRow(row) {
   };
 }
 
+function isLabRecentToolTypeConstraintError(err) {
+  if (!err) return false;
+  const code = String(err?.code || "").trim();
+  const detail = `${err?.message || ""} ${err?.detail || ""}`.toLowerCase();
+  if (code === "23514" && detail.includes("chk_lab_recent_records_tool_type")) {
+    return true;
+  }
+  return detail.includes("chk_lab_recent_records_tool_type");
+}
+
+let ensureLabRecentToolTypeConstraintPromise = null;
+
+async function ensureLabRecentToolTypeConstraint() {
+  if (ensureLabRecentToolTypeConstraintPromise) {
+    return ensureLabRecentToolTypeConstraintPromise;
+  }
+  ensureLabRecentToolTypeConstraintPromise = (async () => {
+    await pool.query(
+      `
+        ALTER TABLE lab_recent_records
+        DROP CONSTRAINT IF EXISTS chk_lab_recent_records_tool_type;
+      `
+    );
+    await pool.query(
+      `
+        ALTER TABLE lab_recent_records
+        ADD CONSTRAINT chk_lab_recent_records_tool_type
+        CHECK (tool_type IN ('ACADEMIC_PLS', 'CITATIONS', 'DATA_VIZ', 'REVIEW_SIMULATOR'));
+      `
+    );
+  })();
+
+  try {
+    await ensureLabRecentToolTypeConstraintPromise;
+  } finally {
+    ensureLabRecentToolTypeConstraintPromise = null;
+  }
+}
+
 async function saveLabRecentRecord({
   userId,
   toolType,
@@ -243,27 +296,39 @@ async function saveLabRecentRecord({
   const normalizedToolType = normalizeLabToolType(toolType);
   if (!userId || !normalizedToolType) return;
 
-  await pool.query(
-    `
-      INSERT INTO lab_recent_records (
-        id,
-        user_id,
-        tool_type,
-        title,
-        input_payload,
-        output_payload
-      )
-      VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb);
-    `,
-    [
-      crypto.randomUUID(),
-      userId,
-      normalizedToolType,
-      sanitizeRecentTitle(title),
-      JSON.stringify(inputPayload || {}),
-      JSON.stringify(outputPayload || {}),
-    ]
-  );
+  const values = [
+    crypto.randomUUID(),
+    userId,
+    normalizedToolType,
+    sanitizeRecentTitle(title),
+    JSON.stringify(inputPayload || {}),
+    JSON.stringify(outputPayload || {}),
+  ];
+  const insertSql = `
+    INSERT INTO lab_recent_records (
+      id,
+      user_id,
+      tool_type,
+      title,
+      input_payload,
+      output_payload
+    )
+    VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb);
+  `;
+
+  try {
+    await pool.query(insertSql, values);
+  } catch (err) {
+    if (
+      normalizedToolType === "REVIEW_SIMULATOR" &&
+      isLabRecentToolTypeConstraintError(err)
+    ) {
+      await ensureLabRecentToolTypeConstraint();
+      await pool.query(insertSql, values);
+    } else {
+      throw err;
+    }
+  }
 
   // Keep only the latest 30 records per user+tool to control growth.
   await pool.query(
@@ -822,6 +887,23 @@ async function runReviewTask(taskId) {
     task.review = reviewResult.review;
     task.error = null;
     task.updatedAt = new Date().toISOString();
+    try {
+      await saveLabRecentRecord({
+        userId: task.userId,
+        toolType: "REVIEW_SIMULATOR",
+        title: `Review: ${String(task.fileName || "manuscript").slice(0, 64)}`,
+        inputPayload: {
+          fileName: task.fileName,
+          mimeType: task.mimeType || "",
+          extension: manuscript.extension,
+        },
+        outputPayload: {
+          review: task.review,
+          decision: task.review?.decision || "",
+          score: task.review?.score ?? 0,
+        },
+      });
+    } catch {}
   } catch (err) {
     task.status = "FAILED";
     task.error = err?.publicMessage || "review_simulation_failed";
@@ -3785,6 +3867,48 @@ app.get("/lab/data-viz/recent", authMiddleware, async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "dataviz_recent_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get("/lab/review-simulator/recent", authMiddleware, async (req, res) => {
+  try {
+    const items = await listLabRecentRecords({
+      userId: req.auth.userId,
+      toolType: "REVIEW_SIMULATOR",
+      limit: req.query.limit,
+    });
+    return res.status(200).json({
+      items,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "review_recent_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.delete("/lab/review-simulator/recent/:recordId", authMiddleware, async (req, res) => {
+  try {
+    const recordId = String(req.params?.recordId || "").trim();
+    if (!recordId) {
+      return res.status(400).json({ message: "invalid_record_id" });
+    }
+
+    const deleted = await deleteLabRecentRecord({
+      userId: req.auth.userId,
+      toolType: "REVIEW_SIMULATOR",
+      recordId,
+    });
+    if (!deleted) {
+      return res.status(404).json({ message: "recent_record_not_found" });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({
+      message: "review_recent_delete_failed",
       detail: String(err?.message || err),
     });
   }
