@@ -233,4 +233,32 @@ Page({
       icon: "none",
     });
   },
+
+  async onDeleteRecentPolish(e) {
+    const recordId = String(e.currentTarget?.dataset?.id || "").trim();
+    if (!recordId) return;
+
+    try {
+      await request({
+        url: `/lab/academic-pls/recent/${encodeURIComponent(recordId)}`,
+        method: "DELETE",
+        auth: true,
+        timeout: 15000,
+      });
+
+      this.setData({
+        recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
+      });
+      wx.showToast({
+        title: "已删除",
+        icon: "success",
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      wx.showToast({
+        title: "删除失败",
+        icon: "none",
+      });
+    }
+  },
 });

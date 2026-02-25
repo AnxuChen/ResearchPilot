@@ -133,7 +133,14 @@
         </view>
       </view>
     </view>
-    <text class="arrow">›</text>
+    <view class="recent-actions">
+      <text
+        class="delete-btn"
+        data-id="{{item.id}}"
+        catchtap="onDeleteRecentFormat"
+      >删除</text>
+      <text class="arrow">›</text>
+    </view>
   </view>
 </view>
 

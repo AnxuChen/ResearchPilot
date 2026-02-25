@@ -310,6 +310,27 @@ async function listLabRecentRecords({ userId, toolType, limit }) {
   return result.rows.map(mapLabRecentRow);
 }
 
+async function deleteLabRecentRecord({ userId, toolType, recordId }) {
+  const normalizedToolType = normalizeLabToolType(toolType);
+  const normalizedRecordId = String(recordId || "").trim();
+  if (!userId || !normalizedToolType || !normalizedRecordId) {
+    return false;
+  }
+
+  const result = await pool.query(
+    `
+      DELETE FROM lab_recent_records
+      WHERE id = $1
+        AND user_id = $2
+        AND tool_type = $3
+      RETURNING id;
+    `,
+    [normalizedRecordId, userId, normalizedToolType]
+  );
+
+  return Boolean(result.rows[0]?.id);
+}
+
 function normalizeEmail(value) {
   return String(value || "")
     .trim()
@@ -3685,6 +3706,30 @@ app.get("/lab/academic-pls/recent", authMiddleware, async (req, res) => {
   }
 });
 
+app.delete("/lab/academic-pls/recent/:recordId", authMiddleware, async (req, res) => {
+  try {
+    const recordId = String(req.params?.recordId || "").trim();
+    if (!recordId) {
+      return res.status(400).json({ message: "invalid_record_id" });
+    }
+
+    const deleted = await deleteLabRecentRecord({
+      userId: req.auth.userId,
+      toolType: "ACADEMIC_PLS",
+      recordId,
+    });
+    if (!deleted) {
+      return res.status(404).json({ message: "recent_record_not_found" });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({
+      message: "academic_recent_delete_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
 app.get("/lab/citations/recent", authMiddleware, async (req, res) => {
   try {
     const items = await listLabRecentRecords({
@@ -3698,6 +3743,30 @@ app.get("/lab/citations/recent", authMiddleware, async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "citation_recent_list_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.delete("/lab/citations/recent/:recordId", authMiddleware, async (req, res) => {
+  try {
+    const recordId = String(req.params?.recordId || "").trim();
+    if (!recordId) {
+      return res.status(400).json({ message: "invalid_record_id" });
+    }
+
+    const deleted = await deleteLabRecentRecord({
+      userId: req.auth.userId,
+      toolType: "CITATIONS",
+      recordId,
+    });
+    if (!deleted) {
+      return res.status(404).json({ message: "recent_record_not_found" });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({
+      message: "citation_recent_delete_failed",
       detail: String(err?.message || err),
     });
   }

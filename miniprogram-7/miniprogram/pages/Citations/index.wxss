@@ -341,6 +341,21 @@
     color: #cbd5e1;
   }
 
+  .recent-actions {
+    display: flex;
+    align-items: center;
+    gap: 14rpx;
+  }
+
+  .delete-btn {
+    font-size: 22rpx;
+    color: #b91c1c;
+    background: #fee2e2;
+    border-radius: 999rpx;
+    padding: 8rpx 16rpx;
+    line-height: 1;
+  }
+
   .recent-empty {
     background: rgba(255, 255, 255, 0.75);
     border-radius: 24rpx;
