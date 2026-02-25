@@ -233,12 +233,14 @@ page {
   }
   
   .score-label {
+    display: block;
+    margin-top: 6rpx;
     font-size: 22rpx;
     color: #6b7280;
   }
 
   .recent-delete-btn {
-    margin-top: 10rpx;
+    margin-top: 18rpx;
     display: inline-flex;
     align-items: center;
     justify-content: center;
