@@ -1,7 +1,16 @@
+const app = getApp();
+const { request } = require("../utils/request");
+
 function normalizePath(value) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
+function parseAuthError(err) {
+  if (!err) return false;
+  if (err.message === "missing_token") return true;
+  return err.statusCode === 401;
 }
 
 Component({
@@ -9,6 +18,7 @@ Component({
     selectedPath: "/pages/lab/index",
     showSearchModal: false,
     searchKeyword: "",
+    searchLoading: false,
     leftTabs: [
       {
         pagePath: "/pages/lab/index",
@@ -67,37 +77,94 @@ Component({
       wx.switchTab({ url: pagePath });
     },
     openSearchModal() {
-        this.setData({ showSearchModal: true });
-      },
-      
-      closeSearchModal() {
-        this.setData({ showSearchModal: false });
-      },
-      
-      preventClose() {
-        // 阻止冒泡
-      },
-      
-      onSearchTap() {
-        const keyword = this.data.searchKeyword || "";
-        this.closeSearchModal();
-      
-        wx.navigateTo({
-          url: `/pages/explore/index?keyword=${keyword}`
-        });
-      },
-      
-      onSearchConfirm(e) {
-        this.setData({
-          searchKeyword: e.detail.value
-        });
-        this.onSearchTap();
-      },
+      this.setData({ showSearchModal: true });
+    },
 
-      onInputChange(e) {
-        this.setData({
-          searchKeyword: e.detail.value
+    closeSearchModal() {
+      if (this.data.searchLoading) return;
+      this.setData({ showSearchModal: false });
+    },
+
+    preventClose() {
+      // 阻止冒泡
+    },
+
+    async onSearchTap() {
+      if (this.data.searchLoading) return;
+      const keyword = String(this.data.searchKeyword || "").trim();
+      let prefetchedResponse = null;
+      let shouldRelogin = false;
+
+      this.setData({ searchLoading: true });
+      try {
+        prefetchedResponse = await request({
+          url: "/papers/feed",
+          method: "GET",
+          data: {
+            page: 1,
+            pageSize: 12,
+            keywords: keyword || undefined,
+          },
+          auth: true,
+          timeout: 15000,
         });
-      },
+      } catch (err) {
+        shouldRelogin = parseAuthError(err);
+        if (!shouldRelogin) {
+          wx.showToast({
+            title: "搜索预加载失败，已切换到Explore",
+            icon: "none",
+          });
+        }
+      } finally {
+        this.setData({ searchLoading: false });
+      }
+
+      if (shouldRelogin) {
+        wx.removeStorageSync("token");
+        wx.removeStorageSync("user");
+        this.setData({ showSearchModal: false });
+        wx.reLaunch({ url: "/pages/login/login" });
+        return;
+      }
+
+      app.globalData.exploreKeywords = keyword;
+      app.globalData.exploreSearchPrefetch = {
+        keywords: keyword,
+        response: prefetchedResponse,
+        fetchedAt: Date.now(),
+      };
+
+      const pages = getCurrentPages();
+      const current = pages[pages.length - 1];
+      const currentPath = normalizePath(current?.route || "");
+
+      this.setData({
+        showSearchModal: false,
+        selectedPath: "/pages/explore/index",
+      });
+
+      if (currentPath === "/pages/explore/index") {
+        if (typeof current?.consumePrefetchedSearch === "function") {
+          current.consumePrefetchedSearch();
+        }
+        return;
+      }
+
+      wx.switchTab({ url: "/pages/explore/index" });
+    },
+
+    onSearchConfirm(e) {
+      this.setData({
+        searchKeyword: e.detail.value || "",
+      });
+      this.onSearchTap();
+    },
+
+    onInputChange(e) {
+      this.setData({
+        searchKeyword: e.detail.value || "",
+      });
+    },
   },
 });

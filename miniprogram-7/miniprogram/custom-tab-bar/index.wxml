@@ -61,12 +61,15 @@
     <view class="search-row">
       <input 
         class="search-input"
+        value="{{searchKeyword}}"
         placeholder="输入关键词检索论文，留空使用默认"
+        bindinput="onInputChange"
         confirm-type="search"
         bindconfirm="onSearchConfirm"
       />
       <view class="search-btn" bindtap="onSearchTap">
-        搜索
+        <text wx:if="{{!searchLoading}}">搜索</text>
+        <text wx:else>检索中...</text>
       </view>
     </view>
 

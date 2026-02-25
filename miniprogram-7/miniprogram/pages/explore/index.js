@@ -37,6 +37,15 @@ function parseDatasetBoolean(value) {
   return Boolean(value);
 }
 
+function parseExplorePrefetch(value) {
+  if (!value || typeof value !== "object") return null;
+  return {
+    keywords: String(value.keywords || "").trim(),
+    response:
+      value.response && typeof value.response === "object" ? value.response : null,
+  };
+}
+
 Page({
   data: {
     keywords: "",
@@ -51,6 +60,9 @@ Page({
   },
 
   onLoad() {
+    if (this.consumePrefetchedSearch()) {
+      return;
+    }
     const keywords = app.globalData.exploreKeywords || "";
     this.setData({ keywords });
     this.fetchPapers(keywords);
@@ -58,6 +70,7 @@ Page({
 
   onShow() {
     this.syncTabBarSelection();
+    this.consumePrefetchedSearch();
   },
 
   syncTabBarSelection() {
@@ -81,6 +94,42 @@ Page({
     this.fetchPapers(this.data.keywords);
   },
 
+  consumePrefetchedSearch() {
+    const pending = parseExplorePrefetch(app.globalData.exploreSearchPrefetch);
+    if (!pending) return false;
+    app.globalData.exploreSearchPrefetch = null;
+
+    this.setData({
+      keywords: pending.keywords,
+    });
+    if (pending.response) {
+      this.applyFeedResponse(pending.response, pending.keywords);
+      return true;
+    }
+
+    this.fetchPapers(pending.keywords);
+    return true;
+  },
+
+  applyFeedResponse(resp, rawKeywords) {
+    const keywords = String(rawKeywords || "").trim();
+    const papers = (resp.items || []).map(normalizePaper);
+    const columns = splitColumns(papers);
+    const appliedKeywords =
+      (resp.meta && resp.meta.appliedKeywords) || keywords || "";
+
+    app.globalData.exploreKeywords = keywords;
+    this.setData({
+      keywords,
+      appliedKeywords,
+      papers,
+      leftPapers: columns.left,
+      rightPapers: columns.right,
+      source: (resp.meta && resp.meta.source) || "",
+      errorMsg: "",
+    });
+  },
+
   async fetchPapers(rawKeywords, options = {}) {
     if (this.data.isLoading) return;
     const keywords = (rawKeywords || "").trim();
@@ -99,19 +148,7 @@ Page({
         method: "GET",
         auth: true,
       });
-      const papers = (resp.items || []).map(normalizePaper);
-      const columns = splitColumns(papers);
-      const appliedKeywords =
-        (resp.meta && resp.meta.appliedKeywords) || keywords || "";
-
-      app.globalData.exploreKeywords = keywords;
-      this.setData({
-        appliedKeywords,
-        papers,
-        leftPapers: columns.left,
-        rightPapers: columns.right,
-        source: (resp.meta && resp.meta.source) || "",
-      });
+      this.applyFeedResponse(resp, keywords);
     } catch (err) {
       if (err.statusCode === 401 || err.message === "missing_token") {
         wx.removeStorageSync("token");
@@ -121,6 +158,7 @@ Page({
       }
       this.setData({
         errorMsg: "获取论文失败，请稍后重试",
+        source: "",
       });
     } finally {
       this.setData({ isLoading: false });
