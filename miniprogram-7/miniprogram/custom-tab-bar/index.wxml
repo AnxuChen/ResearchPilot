@@ -1,0 +1,45 @@
+<view class="nav-shell">
+  <view class="nav-container">
+    <view class="tabs-row">
+      <block wx:for="{{leftTabs}}" wx:key="pagePath">
+        <view
+          class="tab-item {{selectedPath === item.pagePath ? 'tab-item-active' : ''}}"
+          data-path="{{item.pagePath}}"
+          bindtap="onTapTab"
+        >
+          <view class="tab-icon-wrap">
+            <image
+              class="tab-icon"
+              src="{{selectedPath === item.pagePath ? item.selectedIconPath : item.iconPath}}"
+              mode="aspectFit"
+            />
+          </view>
+          <text class="tab-label">{{item.text}}</text>
+        </view>
+      </block>
+
+      <view class="tab-placeholder"></view>
+
+      <block wx:for="{{rightTabs}}" wx:key="pagePath">
+        <view
+          class="tab-item {{selectedPath === item.pagePath ? 'tab-item-active' : ''}}"
+          data-path="{{item.pagePath}}"
+          bindtap="onTapTab"
+        >
+          <view class="tab-icon-wrap">
+            <image
+              class="tab-icon"
+              src="{{selectedPath === item.pagePath ? item.selectedIconPath : item.iconPath}}"
+              mode="aspectFit"
+            />
+          </view>
+          <text class="tab-label">{{item.text}}</text>
+        </view>
+      </block>
+    </view>
+
+    <view class="center-fab" bindtap="onTapCenter">
+      <text class="fab-plus">+</text>
+    </view>
+  </view>
+</view>

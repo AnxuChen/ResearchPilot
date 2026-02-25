@@ -15,7 +15,7 @@
     "pages/profile/index"
   ],
   "tabBar": {
-    "custom": false, 
+    "custom": true,
     "color": "#9CA3AF",
     "selectedColor": "#2DD4BF",
     "backgroundColor": "#ffffff",
@@ -28,16 +28,16 @@
         "selectedIconPath": "images/tabbar/lab_sel.png"
       },
       {
-        "pagePath": "pages/explore/index",
-        "text": "EXPLORE",
-        "iconPath": "images/tabbar/explore.png",
-        "selectedIconPath": "images/tabbar/explore_sel.png"
-      },
-      {
         "pagePath": "pages/projects/index",
         "text": "PROJECTS",
         "iconPath": "images/tabbar/project.png",
         "selectedIconPath": "images/tabbar/project_sel.png"
+      },
+      {
+        "pagePath": "pages/explore/index",
+        "text": "LIBRARY",
+        "iconPath": "images/tabbar/explore.png",
+        "selectedIconPath": "images/tabbar/explore_sel.png"
       },
       {
         "pagePath": "pages/profile/index",
