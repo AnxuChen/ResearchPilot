@@ -58,6 +58,18 @@ Page({
     this.fetchConferences();
   },
 
+  onShow() {
+    this.syncTabBarSelection();
+  },
+
+  syncTabBarSelection() {
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (!tabBar || !tabBar.setData) return;
+    tabBar.setData({
+      selectedPath: "/pages/projects/index",
+    });
+  },
+
   onPullDownRefresh() {
     this.fetchConferences({ stopPullDown: true });
   },

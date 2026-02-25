@@ -29,7 +29,16 @@ Page({
    * 生命周期函数--监听页面显示
    */
   onShow() {
+    this.syncTabBarSelection();
     this.syncCurrentUser();
+  },
+
+  syncTabBarSelection() {
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (!tabBar || !tabBar.setData) return;
+    tabBar.setData({
+      selectedPath: "/pages/lab/index",
+    });
   },
 
   async syncCurrentUser() {

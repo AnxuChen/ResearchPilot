@@ -57,7 +57,16 @@ Page({
   },
 
   onShow() {
+    this.syncTabBarSelection();
     this.syncProfile();
+  },
+
+  syncTabBarSelection() {
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (!tabBar || !tabBar.setData) return;
+    tabBar.setData({
+      selectedPath: "/pages/profile/index",
+    });
   },
 
   onPullDownRefresh() {

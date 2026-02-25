@@ -56,6 +56,18 @@ Page({
     this.fetchPapers(keywords);
   },
 
+  onShow() {
+    this.syncTabBarSelection();
+  },
+
+  syncTabBarSelection() {
+    const tabBar = this.getTabBar && this.getTabBar();
+    if (!tabBar || !tabBar.setData) return;
+    tabBar.setData({
+      selectedPath: "/pages/explore/index",
+    });
+  },
+
   onPullDownRefresh() {
     this.fetchPapers(this.data.keywords, { stopPullDown: true });
   },

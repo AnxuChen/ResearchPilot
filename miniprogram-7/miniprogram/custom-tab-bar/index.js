@@ -1,6 +1,12 @@
+function normalizePath(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  return raw.startsWith("/") ? raw : `/${raw}`;
+}
+
 Component({
   data: {
-    selectedPath: "",
+    selectedPath: "/pages/lab/index",
     showSearchModal: false,
     searchKeyword: "",
     leftTabs: [
@@ -49,14 +55,15 @@ Component({
     syncSelectedPath() {
       const pages = getCurrentPages();
       const current = pages[pages.length - 1];
-      const route = current && current.route ? `/${current.route}` : "";
+      const route = current && current.route ? normalizePath(current.route) : "";
       this.setData({ selectedPath: route });
     },
 
     onTapTab(e) {
-      const pagePath = String(e.currentTarget?.dataset?.path || "");
+      const pagePath = normalizePath(e.currentTarget?.dataset?.path || "");
       if (!pagePath) return;
       if (pagePath === this.data.selectedPath) return;
+      this.setData({ selectedPath: pagePath });
       wx.switchTab({ url: pagePath });
     },
     openSearchModal() {
