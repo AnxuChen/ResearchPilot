@@ -38,8 +38,39 @@
       </block>
     </view>
 
-    <view class="center-fab" bindtap="onTapCenter">
-      <text class="fab-plus">+</text>
+<!-- 中间悬浮按钮 -->
+<view class="center-fab" bindtap="openSearchModal">
+    <image 
+    class="fab-icon"
+    src="/images/tabbar/find.png"
+    mode="aspectFit"
+  />
+</view>
+
+<!-- 搜索弹窗 -->
+<view wx:if="{{showSearchModal}}" class="modal-mask" bindtap="closeSearchModal">
+  <view class="modal-content" catchtap="preventClose">
+    
+      <!-- 顶部关闭按钮 -->
+  <view class="modal-header">
+    <view class="close-btn" bindtap="closeSearchModal">
+      ✕
     </view>
+  </view>
+
+    <view class="search-row">
+      <input 
+        class="search-input"
+        placeholder="输入关键词检索论文，留空使用默认"
+        confirm-type="search"
+        bindconfirm="onSearchConfirm"
+      />
+      <view class="search-btn" bindtap="onSearchTap">
+        搜索
+      </view>
+    </view>
+
+  </view>
+</view>
   </view>
 </view>

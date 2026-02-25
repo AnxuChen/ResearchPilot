@@ -1,6 +1,8 @@
 Component({
   data: {
     selectedPath: "",
+    showSearchModal: false,
+    searchKeyword: "",
     leftTabs: [
       {
         pagePath: "/pages/lab/index",
@@ -57,35 +59,38 @@ Component({
       if (pagePath === this.data.selectedPath) return;
       wx.switchTab({ url: pagePath });
     },
+    openSearchModal() {
+        this.setData({ showSearchModal: true });
+      },
+      
+      closeSearchModal() {
+        this.setData({ showSearchModal: false });
+      },
+      
+      preventClose() {
+        // 阻止冒泡
+      },
+      
+      onSearchTap() {
+        const keyword = this.data.searchKeyword || "";
+        this.closeSearchModal();
+      
+        wx.navigateTo({
+          url: `/pages/explore/index?keyword=${keyword}`
+        });
+      },
+      
+      onSearchConfirm(e) {
+        this.setData({
+          searchKeyword: e.detail.value
+        });
+        this.onSearchTap();
+      },
 
-    onTapCenter() {
-      const quickActions = [
-        {
-          label: "Rebuttal Simulator",
-          url: "/pages/review_simulator/index",
-        },
-        {
-          label: "Academic Polisher",
-          url: "/pages/AcademicPls/index",
-        },
-        {
-          label: "Create Data Viz",
-          url: "/pages/DataViz/index",
-        },
-        {
-          label: "Citations",
-          url: "/pages/Citations/index",
-        },
-      ];
-
-      wx.showActionSheet({
-        itemList: quickActions.map((item) => item.label),
-        success: (res) => {
-          const target = quickActions[res.tapIndex];
-          if (!target?.url) return;
-          wx.navigateTo({ url: target.url });
-        },
-      });
-    },
+      onInputChange(e) {
+        this.setData({
+          searchKeyword: e.detail.value
+        });
+      },
   },
 });
