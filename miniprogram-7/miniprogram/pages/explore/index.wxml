@@ -30,11 +30,6 @@
     />
     <button class="search-btn" loading="{{isLoading}}" bindtap="onSearchTap">{{language === 'zh' ? '搜索' : 'Search'}}</button>
   </view>
-  <view class="search-meta">
-    <text class="search-meta-text">
-      {{language === 'zh' ? '当前关键词：' : 'Current keywords: '}}{{appliedKeywords || (language === 'zh' ? '默认' : 'default')}}
-    </text>
-  </view>
   <view wx:if="{{source==='local_cache'}}" class="search-warning">
     {{language === 'zh' ? 'OpenAlex 请求失败，已自动回退到本地缓存。' : 'OpenAlex request failed. Fallback to local cache.'}}
   </view>

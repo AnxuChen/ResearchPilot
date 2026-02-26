@@ -341,15 +341,6 @@ page {
     box-shadow: 0 4rpx 12rpx rgba(109, 169, 229, 0.3);
   }
 
-  .search-meta {
-    margin-bottom: 10rpx;
-  }
-
-  .search-meta-text {
-    font-size: 22rpx;
-    color: #6d6d7a;
-  }
-
   .search-warning {
     margin-bottom: 26rpx;
     font-size: 22rpx;
