@@ -217,8 +217,15 @@ page {
     padding: 8px 20px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
     gap: 6px;
     box-shadow: 0 4px 10px rgba(45, 212, 191, 0.3);
+  }
+
+  .btn-launch::after {
+    border: none;
   }
   
   /* Academic Polisher 卡片 */
