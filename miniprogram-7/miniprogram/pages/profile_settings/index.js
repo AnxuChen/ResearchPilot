@@ -179,10 +179,14 @@ Page({
     const cachedNickname =
       typeof cachedUser.nickname === "string" ? cachedUser.nickname.trim() : "";
     const cachedAvatar = typeof cachedUser.avatarUrl === "string" ? cachedUser.avatarUrl.trim() : "";
+    const cachedBadgeKey =
+      typeof cachedUser.badgeKey === "string" ? cachedUser.badgeKey.trim() : "";
+    const cachedBadgeText =
+      typeof cachedUser.badgeText === "string" ? cachedUser.badgeText.trim() : "";
     const localProfilePref = getUserProfilePref(userId);
     const localBadgePref = getUserBadgePref(userId);
-    const badgeOption = getBadgeOptionByKey(localBadgePref?.key);
-    const badgeText = localBadgePref?.text || badgeOption.previewText;
+    const badgeOption = getBadgeOptionByKey(localBadgePref?.key || cachedBadgeKey);
+    const badgeText = localBadgePref?.text || cachedBadgeText || badgeOption.previewText;
     const nickname = localProfilePref?.nickname || cachedNickname;
 
     this.setData({
@@ -215,12 +219,20 @@ Page({
       const userId = String(user?.id || "").trim();
       const serverNickname = user?.nickname ? String(user.nickname).trim() : "";
       const avatarUrl = user?.avatarUrl ? String(user.avatarUrl).trim() : "";
+      const serverBadgeKey = user?.badgeKey ? String(user.badgeKey).trim() : "";
+      const serverBadgeText = user?.badgeText ? String(user.badgeText).trim().slice(0, 24) : "";
+      const serverPreferredLanguage =
+        user?.preferredLanguage === "zh" || user?.preferredLanguage === "en"
+          ? user.preferredLanguage
+          : "";
       const localProfilePref = getUserProfilePref(userId);
-      const nickname = localProfilePref?.nickname || serverNickname;
+      const nickname = serverNickname || localProfilePref?.nickname || "";
       const pref = getUserBadgePref(userId);
-      const option = getBadgeOptionByKey(pref?.key);
-      const badgeText = pref?.text || option.previewText;
-      const selectedLanguage = getCurrentLanguage();
+      const option = getBadgeOptionByKey(serverBadgeKey || pref?.key);
+      const badgeText = serverBadgeText || pref?.text || option.previewText;
+      const selectedLanguage = serverPreferredLanguage
+        ? setCurrentLanguage(serverPreferredLanguage)
+        : getCurrentLanguage();
 
       this.setData({
         userId,
@@ -254,10 +266,36 @@ Page({
     if (language === this.data.selectedLanguage) return;
     this.setData({ selectedLanguage: language });
     this.syncLanguage();
+    this.persistPreferredLanguage(language);
     wx.showToast({
       title: language === "zh" ? "已切换为中文" : "Language switched to English",
       icon: "none",
     });
+  },
+
+  async persistPreferredLanguage(language) {
+    const userId = this.resolveUserId();
+    if (!userId) return;
+    try {
+      const resp = await request({
+        url: "/users/me/profile",
+        method: "PUT",
+        auth: true,
+        data: {
+          preferredLanguage: language,
+        },
+      });
+      const serverUser = resp?.user && typeof resp.user === "object" ? resp.user : {};
+      const cachedUser = wx.getStorageSync("user") || {};
+      wx.setStorageSync("user", {
+        ...cachedUser,
+        ...serverUser,
+        preferredLanguage: language,
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      console.warn("Failed to persist preferred language", err);
+    }
   },
 
   onInputNickname(e) {
@@ -372,6 +410,10 @@ Page({
         data: {
           nickname,
           fullName: nickname,
+          badgeKey: this.data.selectedBadgeKey,
+          badgeText:
+            String(this.data.badgeText || "").trim() || this.data.selectedBadgeFallbackText,
+          preferredLanguage: this.data.selectedLanguage,
           avatarUrl:
             String(this.data.pendingAvatarDataUrl || "").trim() ||
             String(this.data.originalAvatarUrl || "").trim() ||
@@ -386,6 +428,19 @@ Page({
         id: serverUser.id || userId || cachedUser.id,
         nickname,
         fullName: nickname,
+        badgeKey:
+          serverUser.badgeKey ||
+          this.data.selectedBadgeKey ||
+          cachedUser.badgeKey ||
+          null,
+        badgeText:
+          serverUser.badgeText ||
+          String(this.data.badgeText || "").trim() ||
+          this.data.selectedBadgeFallbackText ||
+          cachedUser.badgeText ||
+          null,
+        preferredLanguage:
+          serverUser.preferredLanguage || this.data.selectedLanguage || cachedUser.preferredLanguage || null,
         avatarUrl:
           String(this.data.pendingAvatarDataUrl || "").trim() ||
           String(this.data.originalAvatarUrl || "").trim() ||

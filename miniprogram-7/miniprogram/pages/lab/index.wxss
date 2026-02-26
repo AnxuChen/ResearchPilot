@@ -28,6 +28,10 @@ page {
     gap: 16px; /* 控制 Logo 和下面标题之间的间距 */
   }
 
+  .left-column-zh {
+    transform: translateX(-32rpx);
+  }
+
   .brand {
     display: flex;
     align-items: center;

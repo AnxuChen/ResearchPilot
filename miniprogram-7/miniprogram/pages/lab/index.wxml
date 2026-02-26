@@ -1,7 +1,7 @@
 <!--pages/lab/index.wxml-->
 <view class="container">
   <view class="header-wrapper">
-    <view class="left-column">
+    <view class="left-column {{language === 'zh' ? 'left-column-zh' : ''}}">
       <view class="brand {{language === 'zh' ? 'brand-zh' : ''}}">
         <view class="logo-box">
           <image class="icon-img" src="/images/lab/lab.png" mode="aspectFit"></image> 

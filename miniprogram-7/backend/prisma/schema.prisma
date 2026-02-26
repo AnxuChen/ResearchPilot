@@ -48,6 +48,7 @@ model User {
   projectDefaultsInitialized Boolean @default(false) @map("project_defaults_initialized")
   nickname    String?
   avatarUrl   String?           @map("avatar_url")
+  profileSetting UserProfileSetting?
   createdAt   DateTime          @default(now()) @map("created_at")
   updatedAt   DateTime          @updatedAt @map("updated_at")
   preference  UserPreference?
@@ -62,6 +63,18 @@ model User {
   labRecentRecords LabRecentRecord[]
 
   @@map("users")
+}
+
+model UserProfileSetting {
+  userId            String   @id @map("user_id")
+  badgeKey          String?  @map("badge_key")
+  badgeText         String?  @map("badge_text")
+  preferredLanguage String?  @map("preferred_language")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profile_settings")
 }
 
 model LabRecentRecord {

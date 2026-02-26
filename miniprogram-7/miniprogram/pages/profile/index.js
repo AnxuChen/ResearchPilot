@@ -93,14 +93,25 @@ function getUserBadgePreference(userId) {
   return { key, text };
 }
 
-function resolveBadgeDisplay(userId) {
+function resolveBadgeDisplay(userId, serverBadge = null) {
   const pref = getUserBadgePreference(userId);
-  const key = pref?.key && BADGE_META_MAP[pref.key] ? pref.key : DEFAULT_BADGE.key;
+  const serverKey =
+    serverBadge?.key && BADGE_META_MAP[String(serverBadge.key).trim()]
+      ? String(serverBadge.key).trim()
+      : "";
+  const serverText =
+    serverBadge?.text && String(serverBadge.text).trim()
+      ? String(serverBadge.text).trim().slice(0, 24)
+      : "";
+  const key =
+    (serverKey && BADGE_META_MAP[serverKey] ? serverKey : "") ||
+    (pref?.key && BADGE_META_MAP[pref.key] ? pref.key : DEFAULT_BADGE.key);
   const meta = BADGE_META_MAP[key] || BADGE_META_MAP[DEFAULT_BADGE.key];
-  const text =
+  const localText =
     pref?.text && String(pref.text).trim()
       ? String(pref.text).trim().slice(0, 24)
-      : meta.fallbackText || DEFAULT_BADGE.text;
+      : "";
+  const text = serverText || localText || meta.fallbackText || DEFAULT_BADGE.text;
   return {
     badgeKey: key,
     badgeText: text,
@@ -212,7 +223,10 @@ Page({
         userName: buildDisplayName(resolvedUser),
         userBio: buildBio(resolvedUser, this.data.language),
         avatarUrl: resolvedUser.avatarUrl || "/images/profile/user.png",
-        ...resolveBadgeDisplay(resolvedUser.id),
+        ...resolveBadgeDisplay(resolvedUser.id, {
+          key: resolvedUser.badgeKey,
+          text: resolvedUser.badgeText,
+        }),
       });
       wx.setStorageSync("user", resolvedUser || {});
     } catch (err) {
@@ -225,7 +239,10 @@ Page({
         userName: buildDisplayName(cachedUser),
         userBio: buildBio(cachedUser, this.data.language),
         avatarUrl: cachedUser.avatarUrl || "/images/profile/user.png",
-        ...resolveBadgeDisplay(cachedUser.id),
+        ...resolveBadgeDisplay(cachedUser.id, {
+          key: cachedUser.badgeKey,
+          text: cachedUser.badgeText,
+        }),
       });
     }
   },

@@ -46,6 +46,7 @@ const LAB_TOOL_TYPES = new Set([
   "DATA_VIZ",
   "REVIEW_SIMULATOR",
 ]);
+const SUPPORTED_PROFILE_LANGUAGES = new Set(["en", "zh"]);
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PROJECT_COLOR_THEMES = new Set([
   "green",
@@ -182,6 +183,25 @@ function normalizeLabToolType(value) {
   return "";
 }
 
+function normalizePreferredLanguage(value) {
+  const raw = String(value || "").trim().toLowerCase();
+  if (!raw) return null;
+  if (SUPPORTED_PROFILE_LANGUAGES.has(raw)) return raw;
+  return null;
+}
+
+function normalizeProfileBadgeKey(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  return raw.slice(0, 48);
+}
+
+function normalizeProfileBadgeText(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  return raw.slice(0, 24);
+}
+
 function sanitizeRecentTitle(value) {
   return String(value || "")
     .replace(/\s+/g, " ")
@@ -284,6 +304,120 @@ async function ensureLabRecentToolTypeConstraint() {
   } finally {
     ensureLabRecentToolTypeConstraintPromise = null;
   }
+}
+
+let ensureUserProfileSettingsTablePromise = null;
+
+async function ensureUserProfileSettingsTable() {
+  if (ensureUserProfileSettingsTablePromise) {
+    return ensureUserProfileSettingsTablePromise;
+  }
+  ensureUserProfileSettingsTablePromise = (async () => {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_profile_settings (
+        user_id TEXT PRIMARY KEY
+          REFERENCES users(id) ON DELETE CASCADE,
+        badge_key TEXT,
+        badge_text TEXT,
+        preferred_language TEXT,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT chk_user_profile_settings_preferred_language
+          CHECK (preferred_language IS NULL OR preferred_language IN ('en', 'zh'))
+      );
+    `);
+  })();
+
+  try {
+    await ensureUserProfileSettingsTablePromise;
+  } finally {
+    ensureUserProfileSettingsTablePromise = null;
+  }
+}
+
+function mapUserProfileSettingsRow(row) {
+  return {
+    badgeKey: row?.badge_key ? String(row.badge_key).trim() : null,
+    badgeText: row?.badge_text ? String(row.badge_text).trim() : null,
+    preferredLanguage: row?.preferred_language
+      ? normalizePreferredLanguage(row.preferred_language)
+      : null,
+  };
+}
+
+async function getUserProfileSettingsByUserId(userId) {
+  if (!userId) return null;
+  await ensureUserProfileSettingsTable();
+  const result = await pool.query(
+    `
+      SELECT
+        user_id,
+        badge_key,
+        badge_text,
+        preferred_language,
+        created_at,
+        updated_at
+      FROM user_profile_settings
+      WHERE user_id = $1
+      LIMIT 1;
+    `,
+    [userId]
+  );
+  return result.rows[0] || null;
+}
+
+async function upsertUserProfileSettingsByUserId({
+  userId,
+  hasBadgeKey,
+  badgeKey,
+  hasBadgeText,
+  badgeText,
+  hasPreferredLanguage,
+  preferredLanguage,
+}) {
+  if (!userId) return null;
+  if (!hasBadgeKey && !hasBadgeText && !hasPreferredLanguage) {
+    return getUserProfileSettingsByUserId(userId);
+  }
+
+  await ensureUserProfileSettingsTable();
+  const result = await pool.query(
+    `
+      INSERT INTO user_profile_settings (
+        user_id,
+        badge_key,
+        badge_text,
+        preferred_language
+      )
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (user_id) DO UPDATE
+      SET
+        badge_key = CASE WHEN $5::boolean THEN EXCLUDED.badge_key ELSE user_profile_settings.badge_key END,
+        badge_text = CASE WHEN $6::boolean THEN EXCLUDED.badge_text ELSE user_profile_settings.badge_text END,
+        preferred_language = CASE
+          WHEN $7::boolean THEN EXCLUDED.preferred_language
+          ELSE user_profile_settings.preferred_language
+        END,
+        updated_at = NOW()
+      RETURNING
+        user_id,
+        badge_key,
+        badge_text,
+        preferred_language,
+        created_at,
+        updated_at;
+    `,
+    [
+      userId,
+      badgeKey,
+      badgeText,
+      preferredLanguage,
+      hasBadgeKey,
+      hasBadgeText,
+      hasPreferredLanguage,
+    ]
+  );
+  return result.rows[0] || null;
 }
 
 async function saveLabRecentRecord({
@@ -606,7 +740,8 @@ function buildAuthToken(user) {
   );
 }
 
-function buildUserPayload(user) {
+function buildUserPayload(user, profileSettings = null) {
+  const settings = mapUserProfileSettingsRow(profileSettings || null);
   return {
     id: user.id,
     openid: user.openid || null,
@@ -615,6 +750,9 @@ function buildUserPayload(user) {
     avatarUrl: user.avatar_url,
     authProvider: user.auth_provider || null,
     fieldOfStudy: user.field_of_study || null,
+    badgeKey: settings.badgeKey,
+    badgeText: settings.badgeText,
+    preferredLanguage: settings.preferredLanguage,
   };
 }
 
@@ -2619,27 +2757,60 @@ app.post("/auth/email-login", async (req, res) => {
 
 app.put("/users/me/profile", authMiddleware, async (req, res) => {
   try {
-    const nicknameRaw = req.body?.nickname;
-    const avatarUrlRaw = req.body?.avatarUrl;
+    const body = req.body || {};
+    const hasNickname = hasOwn(body, "nickname");
+    const hasAvatarUrl = hasOwn(body, "avatarUrl");
+    const hasBadgeKey = hasOwn(body, "badgeKey");
+    const hasBadgeText = hasOwn(body, "badgeText");
+    const hasPreferredLanguage = hasOwn(body, "preferredLanguage");
+
+    const nicknameRaw = body.nickname;
+    const avatarUrlRaw = body.avatarUrl;
+    const badgeKeyRaw = body.badgeKey;
+    const badgeTextRaw = body.badgeText;
+    const preferredLanguageRaw = body.preferredLanguage;
 
     const nickname =
       typeof nicknameRaw === "string" ? nicknameRaw.trim().slice(0, 32) : null;
     const avatarUrl =
       typeof avatarUrlRaw === "string" ? avatarUrlRaw.trim() : null;
+    const badgeKey =
+      hasBadgeKey && badgeKeyRaw !== null && badgeKeyRaw !== undefined
+        ? normalizeProfileBadgeKey(badgeKeyRaw)
+        : null;
+    const badgeText =
+      hasBadgeText && badgeTextRaw !== null && badgeTextRaw !== undefined
+        ? normalizeProfileBadgeText(badgeTextRaw)
+        : null;
+    const preferredLanguage =
+      hasPreferredLanguage && preferredLanguageRaw !== null && preferredLanguageRaw !== undefined
+        ? normalizePreferredLanguage(preferredLanguageRaw)
+        : null;
 
-    if (!nickname || nickname.length < 1) {
+    if (!hasNickname && !hasAvatarUrl && !hasBadgeKey && !hasBadgeText && !hasPreferredLanguage) {
+      return res.status(400).json({ message: "no_profile_fields" });
+    }
+    if (hasNickname && (!nickname || nickname.length < 1)) {
       return res.status(400).json({ message: "invalid_nickname" });
     }
-    if (avatarUrl && !isAllowedAvatarUrl(avatarUrl)) {
+    if (hasAvatarUrl && avatarUrl && !isAllowedAvatarUrl(avatarUrl)) {
       return res.status(400).json({ message: "invalid_avatar_url" });
+    }
+    if (
+      hasPreferredLanguage &&
+      preferredLanguageRaw !== null &&
+      preferredLanguageRaw !== undefined &&
+      !preferredLanguage
+    ) {
+      return res.status(400).json({ message: "invalid_preferred_language" });
     }
 
     const result = await pool.query(
       `
         UPDATE users
         SET
-          nickname = $2,
-          avatar_url = COALESCE($3, avatar_url),
+          nickname = CASE WHEN $2::boolean THEN $3 ELSE nickname END,
+          avatar_url = CASE WHEN $4::boolean THEN COALESCE($5, avatar_url) ELSE avatar_url END,
           updated_at = NOW()
         WHERE id = $1
         RETURNING
@@ -2653,15 +2824,25 @@ app.put("/users/me/profile", authMiddleware, async (req, res) => {
           created_at,
           updated_at;
       `,
-      [req.auth.userId, nickname, avatarUrl]
+      [req.auth.userId, hasNickname, nickname, hasAvatarUrl, avatarUrl]
     );
     const user = result.rows[0];
     if (!user) {
       return res.status(404).json({ message: "user_not_found" });
     }
 
+    const profileSettings = await upsertUserProfileSettingsByUserId({
+      userId: req.auth.userId,
+      hasBadgeKey,
+      badgeKey,
+      hasBadgeText,
+      badgeText,
+      hasPreferredLanguage,
+      preferredLanguage,
+    });
+
     return res.status(200).json({
-      user: buildUserPayload(user),
+      user: buildUserPayload(user, profileSettings),
     });
   } catch (err) {
     return res.status(500).json({
@@ -2672,18 +2853,30 @@ app.put("/users/me/profile", authMiddleware, async (req, res) => {
 });
 
 app.get("/users/me", authMiddleware, async (req, res) => {
-  const user = req.currentUser;
-  return res.status(200).json({
-    id: user.id,
-    openid: user.openid || null,
-    email: user.email || null,
-    nickname: user.nickname || null,
-    avatarUrl: user.avatar_url || null,
-    authProvider: user.auth_provider || null,
-    fieldOfStudy: user.field_of_study || null,
-    createdAt: user.created_at,
-    updatedAt: user.updated_at,
-  });
+  try {
+    const user = req.currentUser;
+    const profileSettings = await getUserProfileSettingsByUserId(user.id);
+    const settings = mapUserProfileSettingsRow(profileSettings);
+    return res.status(200).json({
+      id: user.id,
+      openid: user.openid || null,
+      email: user.email || null,
+      nickname: user.nickname || null,
+      avatarUrl: user.avatar_url || null,
+      authProvider: user.auth_provider || null,
+      fieldOfStudy: user.field_of_study || null,
+      badgeKey: settings.badgeKey,
+      badgeText: settings.badgeText,
+      preferredLanguage: settings.preferredLanguage,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      message: "get_profile_failed",
+      detail: String(err?.message || err),
+    });
+  }
 });
 
 app.get("/users/me/liked-papers", authMiddleware, async (req, res) => {
