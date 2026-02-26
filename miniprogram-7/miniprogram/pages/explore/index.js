@@ -157,7 +157,7 @@ Page({
         return;
       }
       this.setData({
-        errorMsg: "获取论文失败，请稍后重试",
+        errorMsg: "Failed to fetch papers, please retry",
         source: "",
       });
     } finally {
@@ -173,7 +173,7 @@ Page({
     wx.navigateTo({
       url: `/pages/explore_Card/index?keywords=${keywords}`,
       fail: (err) => {
-        console.error("跳转失败:", err);
+        console.error("Navigation failed:", err);
       },
     });
   },
@@ -186,7 +186,7 @@ Page({
     wx.navigateTo({
       url: `/pages/paper/detail?id=${encodeURIComponent(paperId)}`,
       fail: (err) => {
-        console.error("跳转详情页失败:", err);
+        console.error("Failed to open paper detail:", err);
       },
     });
   },
@@ -231,7 +231,7 @@ Page({
         return;
       }
       wx.showToast({
-        title: "点赞失败，请重试",
+        title: "Like failed, please retry",
         icon: "none",
       });
     } finally {

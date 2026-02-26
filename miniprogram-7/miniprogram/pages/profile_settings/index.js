@@ -1,7 +1,13 @@
+const app = getApp();
 const { request } = require("../../utils/request");
 
 const DEFAULT_AVATAR = "/images/profile/user.png";
 const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
+const LANGUAGE_PREF_STORAGE_KEY = "app_language";
+const LANGUAGE_OPTIONS = [
+  { value: "en", label: "English" },
+  { value: "zh", label: "Chinese" },
+];
 const BADGE_OPTIONS = [
   {
     key: "night_owl",
@@ -52,6 +58,11 @@ function getBadgeOptionByKey(value) {
   return BADGE_OPTIONS.find((item) => item.key === key) || BADGE_OPTIONS[0];
 }
 
+function normalizeLanguage(value) {
+  const language = String(value || "").trim().toLowerCase();
+  return language === "zh" ? "zh" : "en";
+}
+
 function getBadgePrefsMap() {
   const raw = wx.getStorageSync(BADGE_PREF_STORAGE_KEY);
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -95,6 +106,8 @@ Page({
     selectedBadgeClass: BADGE_OPTIONS[0].className,
     selectedBadgeFallbackText: BADGE_OPTIONS[0].previewText,
     badgeText: BADGE_OPTIONS[0].previewText,
+    languageOptions: LANGUAGE_OPTIONS,
+    selectedLanguage: "en",
   },
 
   onLoad() {
@@ -131,6 +144,9 @@ Page({
       const pref = getUserBadgePref(userId);
       const option = getBadgeOptionByKey(pref?.key);
       const badgeText = pref?.text || option.previewText;
+      const selectedLanguage = normalizeLanguage(
+        wx.getStorageSync(LANGUAGE_PREF_STORAGE_KEY) || app?.globalData?.language
+      );
 
       this.setData({
         userId,
@@ -143,6 +159,7 @@ Page({
         selectedBadgeClass: option.className,
         selectedBadgeFallbackText: option.previewText,
         badgeText,
+        selectedLanguage,
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
@@ -151,6 +168,20 @@ Page({
         icon: "none",
       });
     }
+  },
+
+  onSelectLanguage(e) {
+    const language = normalizeLanguage(e.currentTarget?.dataset?.value || "");
+    if (language === this.data.selectedLanguage) return;
+    this.setData({ selectedLanguage: language });
+    wx.setStorageSync(LANGUAGE_PREF_STORAGE_KEY, language);
+    if (app && app.globalData) {
+      app.globalData.language = language;
+    }
+    wx.showToast({
+      title: language === "zh" ? "Language: Chinese" : "Language: English",
+      icon: "none",
+    });
   },
 
   onInputNickname(e) {

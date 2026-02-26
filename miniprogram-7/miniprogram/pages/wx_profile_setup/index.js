@@ -1,13 +1,14 @@
 const { request } = require("../../utils/request");
 
 const DEFAULT_AVATAR = "/images/profile/user.png";
+const WECHAT_DEFAULT_NICKNAME = "\u5fae\u4fe1\u7528\u6237";
 
 function isWechatProfileIncomplete(user) {
   const authProvider = (user?.authProvider || "").toUpperCase();
   if (authProvider !== "WECHAT") return false;
   const nickname = (user?.nickname ? String(user.nickname).trim() : "") || "";
   const avatarUrl = (user?.avatarUrl ? String(user.avatarUrl).trim() : "") || "";
-  return !nickname || nickname === "微信用户" || !avatarUrl;
+  return !nickname || nickname === WECHAT_DEFAULT_NICKNAME || nickname === "WeChat User" || !avatarUrl;
 }
 
 Page({
@@ -44,7 +45,11 @@ Page({
       }
 
       const safeNickname =
-        user?.nickname && user.nickname !== "微信用户" ? String(user.nickname) : "";
+        user?.nickname &&
+        user.nickname !== WECHAT_DEFAULT_NICKNAME &&
+        user.nickname !== "WeChat User"
+          ? String(user.nickname)
+          : "";
       const safeAvatar = (user?.avatarUrl ? String(user.avatarUrl) : "") || "";
 
       this.setData({
@@ -61,7 +66,7 @@ Page({
         return;
       }
       wx.showToast({
-        title: "读取资料失败",
+        title: "Failed to load profile",
         icon: "none",
       });
     }
@@ -88,7 +93,7 @@ Page({
           success: (fileRes) => {
             const base64 = fileRes.data || "";
             if (!base64) {
-              wx.showToast({ title: "头像读取失败", icon: "none" });
+              wx.showToast({ title: "Avatar read failed", icon: "none" });
               return;
             }
             this.setData({
@@ -97,12 +102,12 @@ Page({
             });
           },
           fail: () => {
-            wx.showToast({ title: "头像读取失败", icon: "none" });
+            wx.showToast({ title: "Avatar read failed", icon: "none" });
           },
         });
       },
       fail: () => {
-        wx.showToast({ title: "头像处理失败", icon: "none" });
+        wx.showToast({ title: "Avatar processing failed", icon: "none" });
       },
     });
   },
@@ -112,14 +117,14 @@ Page({
 
     const nickname = (this.data.nickname || "").trim();
     if (!nickname) {
-      wx.showToast({ title: "请输入昵称", icon: "none" });
+      wx.showToast({ title: "Please enter a nickname", icon: "none" });
       return;
     }
 
     const originalAvatar = (this.data.originalAvatarUrl || "").trim();
     const pendingAvatar = (this.data.pendingAvatarDataUrl || "").trim();
     if (!originalAvatar && !pendingAvatar) {
-      wx.showToast({ title: "请上传头像", icon: "none" });
+      wx.showToast({ title: "Please upload an avatar", icon: "none" });
       return;
     }
 
@@ -137,7 +142,7 @@ Page({
       const user = resp?.user || {};
       wx.setStorageSync("user", user);
       wx.showToast({
-        title: "资料已完成",
+        title: "Profile updated",
         icon: "success",
       });
       setTimeout(() => {
@@ -146,7 +151,7 @@ Page({
         });
       }, 250);
     } catch (err) {
-      const msg = err?.response?.message || "更新失败";
+      const msg = err?.response?.message || "Update failed";
       wx.showToast({ title: msg, icon: "none" });
     } finally {
       this.setData({ isSaving: false });

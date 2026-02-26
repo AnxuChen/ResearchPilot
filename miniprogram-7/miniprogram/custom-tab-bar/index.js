@@ -86,7 +86,7 @@ Component({
     },
 
     preventClose() {
-      // 阻止冒泡
+      // prevent event bubbling
     },
 
     async onSearchTap() {
@@ -112,7 +112,7 @@ Component({
         shouldRelogin = parseAuthError(err);
         if (!shouldRelogin) {
           wx.showToast({
-            title: "搜索预加载失败，已切换到Explore",
+            title: "Prefetch failed, switched to Explore",
             icon: "none",
           });
         }

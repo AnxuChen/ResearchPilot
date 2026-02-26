@@ -16,6 +16,22 @@
       bindinput="onInputNickname"
     />
 
+    <view class="language-section">
+      <text class="language-title">Language</text>
+      <text class="language-desc">Choose your preferred app language.</text>
+      <view class="language-options">
+        <view
+          wx:for="{{languageOptions}}"
+          wx:key="value"
+          class="language-chip {{selectedLanguage === item.value ? 'language-chip-active' : ''}}"
+          data-value="{{item.value}}"
+          bindtap="onSelectLanguage"
+        >
+          {{item.label}}
+        </view>
+      </view>
+    </view>
+
     <view class="badge-section">
       <text class="badge-section-title">Profile Tag</text>
       <text class="badge-section-desc">Choose a style and customize the label shown on your avatar.</text>

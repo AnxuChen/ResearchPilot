@@ -1,7 +1,7 @@
 <!--pages/DataViz/index.wxml-->
 <view class="page">
 
-<!-- 渐变背景 -->
+<!-- Gradient Background -->
 <view class="bg">
   <view class="g g1"></view>
   <view class="g g2"></view>
@@ -9,7 +9,7 @@
   <view class="g g4"></view>
 </view>
 
-<!-- 标题 -->
+<!-- Header -->
 <view class="header">
   <text class="title">Create</text>
   <text class="title-gradient">Data Viz</text>
@@ -110,7 +110,7 @@
     <text class="output-sub" wx:if="{{taskStatus}}">Status: {{taskStatus}}</text>
   </view>
 
-  <view wx:if="{{isGenerating}}" class="state-text">AI 正在生成图表，请稍候...</view>
+  <view wx:if="{{isGenerating}}" class="state-text">AI is generating your chart, please wait...</view>
   <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
   <view wx:else>
     <view wx:if="{{chartSummary}}" class="summary">{{chartSummary}}</view>
@@ -124,10 +124,10 @@
     <view wx:if="{{chartRenderHint}}" class="state-text">{{chartRenderHint}}</view>
     <view class="option-actions">
       <view class="copy-option-btn" bindtap="onToggleOptionText">
-        {{showOptionText ? '隐藏配置 JSON' : '查看配置 JSON'}}
+        {{showOptionText ? 'Hide Config JSON' : 'View Config JSON'}}
       </view>
       <view class="copy-option-btn copy-secondary" bindtap="onCopyChartOption">
-        复制图表配置（ECharts Option）
+        Copy Chart Config (ECharts Option)
       </view>
     </view>
     <view wx:if="{{showOptionText}}" class="option-box">

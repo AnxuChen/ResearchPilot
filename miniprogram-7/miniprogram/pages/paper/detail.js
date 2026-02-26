@@ -68,7 +68,7 @@ Page({
     if (!paperId) {
       this.setData({
         isLoading: false,
-        errorMsg: "缺少论文 ID，无法加载详情",
+        errorMsg: "Missing paper ID, unable to load details",
       });
       return;
     }
@@ -143,7 +143,7 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        errorMsg: "获取论文详情失败，请稍后重试",
+        errorMsg: "Failed to load paper details, please retry",
       });
     } finally {
       this.setData({ isLoading: false });
@@ -172,7 +172,7 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        commentsError: "加载评论失败，请稍后重试",
+        commentsError: "Failed to load comments, please retry",
       });
     } finally {
       this.setData({
@@ -206,7 +206,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "评论发送失败",
+          title: "Failed to post comment",
           icon: "none",
         });
       }
@@ -240,7 +240,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "操作失败",
+          title: "Action failed",
           icon: "none",
         });
       }
@@ -276,7 +276,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "收藏操作失败",
+          title: "Favorite update failed",
           icon: "none",
         });
       }
@@ -304,13 +304,13 @@ Page({
   onCopyLink() {
     const link = this.data.paper && this.data.paper.link ? this.data.paper.link : "";
     if (!link) {
-      wx.showToast({ title: "暂无可复制链接", icon: "none" });
+      wx.showToast({ title: "No link to copy", icon: "none" });
       return;
     }
     wx.setClipboardData({
       data: link,
       success: () => {
-        wx.showToast({ title: "链接已复制", icon: "success" });
+        wx.showToast({ title: "Link copied", icon: "success" });
       },
     });
   },
@@ -318,15 +318,15 @@ Page({
   onOpenLink() {
     const link = this.data.paper && this.data.paper.link ? this.data.paper.link : "";
     if (!link) {
-      wx.showToast({ title: "暂无可打开链接", icon: "none" });
+      wx.showToast({ title: "No link available", icon: "none" });
       return;
     }
     wx.setClipboardData({
       data: link,
       success: () => {
         wx.showModal({
-          title: "链接已复制",
-          content: "已复制论文链接，你可以在浏览器中打开。",
+          title: "Link copied",
+          content: "Paper link copied. You can open it in your browser.",
           showCancel: false,
         });
       },

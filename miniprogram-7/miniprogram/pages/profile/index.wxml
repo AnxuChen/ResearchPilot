@@ -70,9 +70,9 @@
       <view class="see-all">Liked</view>
     </view>
 
-    <view wx:if="{{collectedLoading}}" class="paper-state">正在加载收藏论文...</view>
+    <view wx:if="{{collectedLoading}}" class="paper-state">Loading collected papers...</view>
     <view wx:elif="{{collectedError}}" class="paper-state paper-state-error">{{collectedError}}</view>
-    <view wx:elif="{{!collectedPapers.length}}" class="paper-state">暂无收藏论文，去 Explore 点赞试试</view>
+    <view wx:elif="{{!collectedPapers.length}}" class="paper-state">No collected papers yet. Try liking papers in Explore.</view>
 
     <view wx:else class="paper-list">
       <view

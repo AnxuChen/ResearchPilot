@@ -47,7 +47,7 @@
         <text class="insight-desc">{{paper.venue || 'ArXiv / Conference'}}</text>
       </view>
     </view>
-    <!-- --- 讨论区 --- -->
+    <!-- Comments -->
 <view class="discussion-section">
   <view class="discussion-header">
     <text class="discussion-title">Comments ({{comments.length}})</text>
@@ -109,11 +109,11 @@
     <view class="footer-spacer"></view>
   </view>
 
-<!-- --- 底部输入栏 --- -->
+<!-- Bottom Input Bar -->
 <view class="bottom-input-bar">
   <view class="action-buttons">
-    <button class="action-btn btn-light" bindtap="onCopyLink">复制链接</button>
-    <button class="action-btn btn-dark" bindtap="onOpenLink">打开提示</button>
+    <button class="action-btn btn-light" bindtap="onCopyLink">Copy Link</button>
+    <button class="action-btn btn-dark" bindtap="onOpenLink">Open Hint</button>
   </view>
 
   <view class="input-row">

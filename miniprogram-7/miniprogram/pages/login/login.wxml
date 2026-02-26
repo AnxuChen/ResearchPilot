@@ -1,6 +1,6 @@
 <view class="page">
 
-<!-- 背景装饰 -->
+<!-- Background -->
 <view class="blob blob-teal"></view>
 <view class="blob blob-pink"></view>
 <view class="blob blob-yellow"></view>
@@ -19,7 +19,7 @@
   </view>
 </view>
 
-<!-- 标题 -->
+<!-- Title -->
 <view class="title">
   <view>
     <text class="line">Start Your</text>
@@ -29,13 +29,13 @@
   </view>
 </view>
 
-<!-- 副标题 -->
+<!-- Subtitle -->
 <view class="subtitle">
   Your personal playground for academic
   discovery and neural optimization.
 </view>
 
-<!-- 表单 -->
+<!-- Form -->
 <view class="form">
 
   <view class="input-box">
@@ -59,19 +59,19 @@
 
   <view class="forgot">Forgot Password?</view>
 
-  <!-- 主按钮 -->
+  <!-- Primary Action -->
   <view class="btn primary" bindtap="onSignIn">
     <text>Sign In →</text>
   </view>
 
-  <!-- 次按钮 -->
+  <!-- Secondary Action -->
   <view class="btn secondary" bindtap="onCreate">
     <text>Create Account</text>
   </view>
 
 </view>
 
-<!-- 第三方 -->
+<!-- Third-party Sign In -->
 <view class="other">
   <text class="other-text">Or continue with</text>
   <view class="icons">

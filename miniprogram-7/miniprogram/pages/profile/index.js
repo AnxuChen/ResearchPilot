@@ -213,7 +213,7 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        collectedError: "加载收藏论文失败，请稍后重试",
+        collectedError: "Failed to load collected papers, please retry",
       });
     } finally {
       this.setData({
@@ -228,7 +228,7 @@ Page({
     wx.navigateTo({
       url: `/pages/paper/detail?id=${encodeURIComponent(paperId)}`,
       fail: (err) => {
-        console.error("跳转论文详情失败", err);
+        console.error("Failed to open paper detail", err);
       },
     });
   },

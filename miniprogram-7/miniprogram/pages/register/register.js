@@ -32,11 +32,11 @@ Page({
     const password = this.data.password || "";
 
     if (!email) {
-      wx.showToast({ title: "请输入邮箱", icon: "none" });
+      wx.showToast({ title: "Enter email", icon: "none" });
       return;
     }
     if (password.length < 8) {
-      wx.showToast({ title: "密码至少 8 位", icon: "none" });
+      wx.showToast({ title: "Password must be at least 8 characters", icon: "none" });
       return;
     }
 
@@ -55,16 +55,16 @@ Page({
       wx.setStorageSync("token", resp.token);
       wx.setStorageSync("user", resp.user || {});
       app.globalData.user = resp.user || null;
-      wx.showToast({ title: "注册成功", icon: "success" });
+      wx.showToast({ title: "Registered", icon: "success" });
       setTimeout(() => {
         wx.switchTab({ url: "/pages/lab/index" });
       }, 300);
     } catch (err) {
       if (err.statusCode === 409) {
-        wx.showToast({ title: "邮箱已注册", icon: "none" });
+        wx.showToast({ title: "Email already registered", icon: "none" });
         return;
       }
-      const msg = err?.response?.message || "注册失败，请重试";
+      const msg = err?.response?.message || "Registration failed, please retry";
       wx.showToast({ title: msg, icon: "none" });
     } finally {
       this.setData({ isLoading: false });

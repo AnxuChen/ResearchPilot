@@ -269,9 +269,9 @@ Page({
           taskId: "",
           taskStatus: "FAILED",
           chartOption: null,
-          errorMsg: task.error || "图表生成失败",
+          errorMsg: task.error || "Chart generation failed",
         });
-        wx.showToast({ title: task.error || "图表生成失败", icon: "none" });
+        wx.showToast({ title: task.error || "Chart generation failed", icon: "none" });
         return;
       }
 
@@ -289,7 +289,7 @@ Page({
           isGenerating: false,
           taskId: "",
           taskStatus: "FAILED",
-          errorMsg: "生成超时，请稍后重试",
+          errorMsg: "Generation timed out, please retry",
         });
         return;
       }
@@ -305,18 +305,18 @@ Page({
       success: (res) => {
         const file = Array.isArray(res?.tempFiles) ? res.tempFiles[0] : null;
         if (!file?.path) {
-          wx.showToast({ title: "未选择文件", icon: "none" });
+          wx.showToast({ title: "No file selected", icon: "none" });
           return;
         }
         if (file.size > MAX_FILE_SIZE_BYTES) {
-          wx.showToast({ title: "文件过大，请控制在50MB内", icon: "none" });
+          wx.showToast({ title: "File too large (max 50MB)", icon: "none" });
           return;
         }
 
         const fileName = String(file.name || basename(file.path) || "dataset");
         const extension = extFromFileName(fileName);
         if (!SUPPORTED_EXTENSIONS.includes(extension)) {
-          wx.showToast({ title: "仅支持 CSV/JSON/XLS/XLSX", icon: "none" });
+          wx.showToast({ title: "Only CSV/JSON/XLS/XLSX are supported", icon: "none" });
           return;
         }
 
@@ -337,7 +337,7 @@ Page({
         });
       },
       fail: () => {
-        wx.showToast({ title: "文件选择已取消", icon: "none" });
+        wx.showToast({ title: "File selection canceled", icon: "none" });
       },
     });
   },
@@ -351,7 +351,7 @@ Page({
   async onGenerateChart() {
     if (this.data.isGenerating) return;
     if (!this.data.selectedFilePath || !this.data.selectedFileName) {
-      wx.showToast({ title: "请先上传数据文件", icon: "none" });
+      wx.showToast({ title: "Please upload a data file first", icon: "none" });
       return;
     }
 
@@ -406,14 +406,14 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       await deleteCloudFile(uploadedFileId);
-      const msg = err?.response?.message || "图表生成失败，请稍后重试";
+      const msg = err?.response?.message || "Chart generation failed, please retry";
       this.setData({
         isGenerating: false,
         taskStatus: "FAILED",
         chartOption: null,
         errorMsg: msg,
       });
-      wx.showToast({ title: "图表生成失败", icon: "none" });
+      wx.showToast({ title: "Chart generation failed", icon: "none" });
     }
   },
 
@@ -426,12 +426,12 @@ Page({
   onCopyChartOption() {
     const text = String(this.data.chartOptionText || "").trim();
     if (!text) {
-      wx.showToast({ title: "暂无可复制配置", icon: "none" });
+      wx.showToast({ title: "No config to copy", icon: "none" });
       return;
     }
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: "配置已复制", icon: "success" }),
+      success: () => wx.showToast({ title: "Config copied", icon: "success" }),
     });
   },
 
@@ -439,13 +439,13 @@ Page({
     const plot = normalizePlotData(option, this.data.selectedChartType);
     if (!plot.points.length) {
       this.setData({
-        chartRenderHint: "图表数据为空，当前仅显示配置。",
+        chartRenderHint: "Chart data is empty. Showing config only.",
       });
       return;
     }
     if (plot.chartType === "heatmap") {
       this.setData({
-        chartRenderHint: "Heatmap 预览暂未开放，当前展示配置与摘要。",
+        chartRenderHint: "Heatmap preview is not available yet. Showing config and summary.",
       });
       return;
     }
@@ -455,7 +455,7 @@ Page({
       .select("#chartCanvas")
       .boundingClientRect((rect) => {
         if (!rect || !rect.width || !rect.height) {
-          this.setData({ chartRenderHint: "图表渲染初始化失败，请重试。" });
+          this.setData({ chartRenderHint: "Chart renderer init failed, please retry." });
           return;
         }
         this.drawPlot(plot, rect.width, rect.height);
@@ -476,13 +476,13 @@ Page({
     const plotW = safeWidth - pad.left - pad.right;
     const plotH = safeHeight - pad.top - pad.bottom;
     if (plotW <= 0 || plotH <= 0) {
-      this.setData({ chartRenderHint: "图表区域尺寸异常，请重试。" });
+      this.setData({ chartRenderHint: "Chart area size is invalid, please retry." });
       return;
     }
 
     const yValues = plot.points.map((p) => p.yValue).filter(Number.isFinite);
     if (!yValues.length) {
-      this.setData({ chartRenderHint: "图表数值无效，当前仅显示配置。" });
+      this.setData({ chartRenderHint: "Invalid chart values. Showing config only." });
       return;
     }
 

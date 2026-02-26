@@ -14,7 +14,7 @@ function formatRecentTime(value) {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   const diffMs = Date.now() - d.getTime();
-  if (diffMs < 60 * 1000) return "刚刚";
+  if (diffMs < 60 * 1000) return "just now";
   if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
   if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
   const year = d.getFullYear();
@@ -131,7 +131,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "读取剪贴板失败",
+          title: "Failed to read clipboard",
           icon: "none",
         });
       },
@@ -147,7 +147,7 @@ Page({
     if (this.data.isSubmitting) return;
     const text = String(this.data.inputText || "").trim();
     if (!text) {
-      wx.showToast({ title: "请先输入引用文本", icon: "none" });
+      wx.showToast({ title: "Please enter citation text", icon: "none" });
       return;
     }
 
@@ -177,9 +177,9 @@ Page({
       this.fetchRecentFormats();
     } catch (err) {
       if (this.handleAuthError(err)) return;
-      const msg = err?.response?.message || "格式化失败，请稍后重试";
+      const msg = err?.response?.message || "Format failed, please retry";
       this.setData({ errorMsg: msg });
-      wx.showToast({ title: "格式化失败", icon: "none" });
+      wx.showToast({ title: "Format failed", icon: "none" });
     } finally {
       this.setData({ isSubmitting: false });
     }
@@ -188,13 +188,13 @@ Page({
   onCopyOutput() {
     const text = String(this.data.outputText || "").trim();
     if (!text) {
-      wx.showToast({ title: "暂无可复制内容", icon: "none" });
+      wx.showToast({ title: "No content to copy", icon: "none" });
       return;
     }
     wx.setClipboardData({
       data: text,
       success: () => {
-        wx.showToast({ title: "已复制", icon: "success" });
+        wx.showToast({ title: "Copied", icon: "success" });
       },
     });
   },
@@ -239,7 +239,7 @@ Page({
     });
 
     wx.showToast({
-      title: "已载入历史格式化",
+      title: "Loaded from recent history",
       icon: "none",
     });
   },
@@ -260,13 +260,13 @@ Page({
         recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
       });
       wx.showToast({
-        title: "已删除",
+        title: "Deleted",
         icon: "success",
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "删除失败",
+        title: "Delete failed",
         icon: "none",
       });
     }

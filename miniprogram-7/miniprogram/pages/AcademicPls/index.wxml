@@ -1,14 +1,14 @@
 <!--pages/AcademicPls/index.wxml-->
 <view class="page">
 
-<!-- 背景光晕 -->
+<!-- Background Glow -->
 <view class="bg">
   <view class="blob b1"></view>
   <view class="blob b2"></view>
   <view class="blob b3"></view>
 </view>
 
-<!-- 标题 -->
+<!-- Header -->
 <view class="header">
   <text class="title">Academic</text>
   <text class="title-gradient">Polisher</text>
@@ -17,7 +17,7 @@
   </text>
 </view>
 
-<!-- 输入卡片 -->
+<!-- Input Card -->
 <view class="card">
   <view class="card-header">
     <view class="card-title">
@@ -45,7 +45,7 @@
   </view>
 </view>
 
-<!-- 中间按钮 -->
+<!-- Action Button -->
 <view class="arrow-wrapper">
   <view class="arrow-btn" bindtap="onPolishText">
     <text wx:if="{{isSubmitting}}">...</text>
@@ -53,7 +53,7 @@
   </view>
 </view>
 
-<!-- 输出卡片 -->
+<!-- Output Card -->
 <view class="card output-card">
   <view class="card-header">
     <view class="card-title">
@@ -120,7 +120,7 @@
         class="delete-btn"
         data-id="{{item.id}}"
         catchtap="onDeleteRecentPolish"
-      >删除</text>
+      >Delete</text>
       <text class="arrow">›</text>
     </view>
   </view>

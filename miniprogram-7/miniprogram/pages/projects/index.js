@@ -101,7 +101,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "加载失败",
+          title: "Load failed",
           icon: "none",
         });
       }
@@ -212,23 +212,23 @@ Page({
       .toLowerCase();
 
     if (!abbr) {
-      wx.showToast({ title: "请输入简称", icon: "none" });
+      wx.showToast({ title: "Enter abbreviation", icon: "none" });
       return null;
     }
     if (!fullName) {
-      wx.showToast({ title: "请输入会议全称", icon: "none" });
+      wx.showToast({ title: "Enter full conference name", icon: "none" });
       return null;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
-      wx.showToast({ title: "截止日期格式应为 YYYY-MM-DD", icon: "none" });
+      wx.showToast({ title: "Deadline format should be YYYY-MM-DD", icon: "none" });
       return null;
     }
     if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      wx.showToast({ title: "开始日期格式应为 YYYY-MM-DD", icon: "none" });
+      wx.showToast({ title: "Start date format should be YYYY-MM-DD", icon: "none" });
       return null;
     }
     if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
-      wx.showToast({ title: "进度需为 0-100", icon: "none" });
+      wx.showToast({ title: "Progress must be between 0 and 100", icon: "none" });
       return null;
     }
 
@@ -274,7 +274,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "保存失败",
+          title: "Save failed",
           icon: "none",
         });
       }
@@ -300,7 +300,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "删除失败",
+          title: "Delete failed",
           icon: "none",
         });
       }

@@ -79,7 +79,7 @@
   </view>
 </view>
 
-<!-- 弹窗 -->
+<!-- Modal -->
 <view wx:if="{{showModal}}" class="modal-mask">
 
 <view class="modal-container">

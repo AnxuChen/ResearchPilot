@@ -5,19 +5,22 @@ App({
   onLaunch: function () {
     const cloudbaseConfig = runtimeConfig.cloudbase || {};
     const cloudEnv = cloudbaseConfig.env || "";
+    const savedLanguage = wx.getStorageSync("app_language");
+    const language = savedLanguage === "zh" ? "zh" : "en";
 
     this.globalData = {
       // direct-http | cloudbase-anyservice
       apiMode: runtimeConfig.apiMode || "direct-http",
       apiBaseUrl: runtimeConfig.apiBaseUrl || "",
       cloudbase: cloudbaseConfig,
-      // 兼容旧页面示例代码
+      // Keep for compatibility with template pages
       env: cloudEnv,
+      language,
       user: null,
     };
 
     if (!wx.cloud) {
-      console.error("请使用 2.2.3 或以上的基础库以使用云能力");
+      console.error("Please use base library 2.2.3 or above to enable cloud features.");
     } else {
       wx.cloud.init({
         env: cloudEnv || undefined,

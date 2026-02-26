@@ -94,7 +94,7 @@ Page({
         wx.reLaunch({ url: "/pages/login/login" });
         return;
       }
-      this.setData({ errorMsg: "获取论文失败，请稍后重试" });
+      this.setData({ errorMsg: "Failed to fetch papers, please retry" });
     } finally {
       this.setData({ isLoading: false });
       if (options.stopPullDown) {
@@ -108,7 +108,7 @@ Page({
     wx.switchTab({
       url: "/pages/explore/index",
       fail: (err) => {
-        console.error("跳转失败，请检查 app.json 中是否配置了该 TabBar 路径", err);
+        console.error("Navigation failed, please check TabBar path in app.json", err);
       },
     });
   },
@@ -121,7 +121,7 @@ Page({
     wx.navigateTo({
       url: `/pages/paper/detail?id=${encodeURIComponent(paperId)}`,
       fail: (err) => {
-        console.error("详情页跳转失败，请检查 app.json 是否注册了该页面", err);
+        console.error("Failed to open detail page, check page registration in app.json", err);
       },
     });
   },
@@ -169,7 +169,7 @@ Page({
         return;
       }
       wx.showToast({
-        title: "点赞失败，请重试",
+        title: "Like failed, please retry",
         icon: "none",
       });
     } finally {

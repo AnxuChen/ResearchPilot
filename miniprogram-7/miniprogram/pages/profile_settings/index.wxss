@@ -65,6 +65,55 @@ page {
   font-size: 26rpx;
 }
 
+.language-section {
+  margin-top: 18rpx;
+  background: #f8fafc;
+  border-radius: 18rpx;
+  padding: 18rpx;
+}
+
+.language-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.language-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #6b7280;
+  line-height: 1.5;
+  display: block;
+}
+
+.language-options {
+  margin-top: 12rpx;
+  display: flex;
+  gap: 12rpx;
+}
+
+.language-chip {
+  min-width: 140rpx;
+  height: 64rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.language-chip-active {
+  border-color: #14b8a6;
+  background: linear-gradient(90deg, rgba(45, 212, 191, 0.18), rgba(244, 114, 182, 0.16));
+  color: #0f766e;
+  font-weight: 700;
+}
+
 .badge-section {
   margin-top: 18rpx;
   background: #f8fafc;

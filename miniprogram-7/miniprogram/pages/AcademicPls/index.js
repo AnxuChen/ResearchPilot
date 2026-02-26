@@ -10,7 +10,7 @@ function formatRecentTime(value) {
 
   const now = Date.now();
   const diffMs = now - d.getTime();
-  if (diffMs < 60 * 1000) return "刚刚";
+  if (diffMs < 60 * 1000) return "just now";
   if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
   if (diffMs < 24 * 60 * 60 * 1000) {
     return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
@@ -108,7 +108,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "读取剪贴板失败",
+          title: "Failed to read clipboard",
           icon: "none",
         });
       },
@@ -120,21 +120,21 @@ Page({
     if (this.data.isSubmitting) return;
     if (!text) {
       wx.showToast({
-        title: "请先输入论文文本",
+        title: "Please enter manuscript text",
         icon: "none",
       });
       return;
     }
     if (text.length < MIN_TEXT_LENGTH) {
       wx.showToast({
-        title: `至少输入 ${MIN_TEXT_LENGTH} 个字符`,
+        title: `Please enter at least ${MIN_TEXT_LENGTH} characters`,
         icon: "none",
       });
       return;
     }
     if (text.length > MAX_TEXT_LENGTH) {
       wx.showToast({
-        title: "输入过长，请精简后重试",
+        title: "Input too long, please shorten and retry",
         icon: "none",
       });
       return;
@@ -161,10 +161,10 @@ Page({
       this.fetchRecentPolishes();
     } catch (err) {
       if (this.handleAuthError(err)) return;
-      const msg = err?.response?.message || "润色失败，请稍后重试";
+      const msg = err?.response?.message || "Polish failed, please retry";
       this.setData({ errorMsg: msg });
       wx.showToast({
-        title: "润色失败",
+        title: "Polish failed",
         icon: "none",
       });
     } finally {
@@ -176,7 +176,7 @@ Page({
     const outputText = String(this.data.outputText || "").trim();
     if (!outputText) {
       wx.showToast({
-        title: "暂无可复制内容",
+        title: "No content to copy",
         icon: "none",
       });
       return;
@@ -185,7 +185,7 @@ Page({
       data: outputText,
       success: () => {
         wx.showToast({
-          title: "已复制",
+          title: "Copied",
           icon: "success",
         });
       },
@@ -229,7 +229,7 @@ Page({
     });
 
     wx.showToast({
-      title: "已载入历史润色",
+      title: "Loaded from recent history",
       icon: "none",
     });
   },
@@ -250,13 +250,13 @@ Page({
         recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
       });
       wx.showToast({
-        title: "已删除",
+        title: "Deleted",
         icon: "success",
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "删除失败",
+        title: "Delete failed",
         icon: "none",
       });
     }

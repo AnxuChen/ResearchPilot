@@ -1,13 +1,14 @@
 // pages/login/login.js
 const app = getApp();
 const { request } = require("../../utils/request");
+const WECHAT_DEFAULT_NICKNAME = "\u5fae\u4fe1\u7528\u6237";
 
 function isWechatProfileIncomplete(user) {
   const authProvider = (user?.authProvider || "").toUpperCase();
   if (authProvider !== "WECHAT") return false;
   const nickname = (user?.nickname ? String(user.nickname).trim() : "") || "";
   const avatarUrl = (user?.avatarUrl ? String(user.avatarUrl).trim() : "") || "";
-  return !nickname || nickname === "微信用户" || !avatarUrl;
+  return !nickname || nickname === WECHAT_DEFAULT_NICKNAME || nickname === "WeChat User" || !avatarUrl;
 }
 
 Page({
@@ -57,7 +58,7 @@ Page({
     const password = this.data.password || "";
     if (!email || !password) {
       wx.showToast({
-        title: "请输入邮箱和密码",
+        title: "Enter email and password",
         icon: "none",
       });
       return;
@@ -73,10 +74,10 @@ Page({
       this.routeAfterLogin(resp);
     } catch (err) {
       if (err.statusCode === 401) {
-        wx.showToast({ title: "账号或密码错误", icon: "none" });
+        wx.showToast({ title: "Invalid email or password", icon: "none" });
         return;
       }
-      const msg = err?.response?.message || "登录失败，请重试";
+      const msg = err?.response?.message || "Sign in failed, please retry";
       wx.showToast({ title: msg, icon: "none" });
     } finally {
       this.setData({ isLoading: false });
@@ -90,7 +91,7 @@ Page({
       wx.login({
         success: async (loginRes) => {
           if (!loginRes.code) {
-            wx.showToast({ title: "获取登录码失败", icon: "none" });
+            wx.showToast({ title: "Failed to get login code", icon: "none" });
             this.setData({ isLoading: false });
             return;
           }
@@ -118,15 +119,15 @@ Page({
               }
               if (err.statusCode) {
                 const msg =
-                  err?.response?.message || `微信登录失败(${err.statusCode})`;
+                  err?.response?.message || `WeChat sign in failed (${err.statusCode})`;
                 wx.showToast({
                   title: msg,
                   icon: "none",
                 });
               } else {
-                console.error("请求微信登录接口失败", err);
+                console.error("Failed to call WeChat login API", err);
                 wx.showToast({
-                  title: "网络异常，请稍后重试",
+                  title: "Network error, please retry",
                   icon: "none",
                 });
               }
@@ -140,9 +141,9 @@ Page({
           sendLoginRequest(0);
         },
         fail: (err) => {
-          console.error("wx.login 调用失败", err);
+          console.error("wx.login failed", err);
           wx.showToast({
-            title: "微信登录失败",
+            title: "WeChat sign in failed",
             icon: "none",
           });
           this.setData({ isLoading: false });
@@ -157,7 +158,7 @@ Page({
     }
 
     wx.getUserProfile({
-      desc: "用于完善用户资料",
+      desc: "Used to complete your profile",
       success: (res) => {
         const userInfo = (res && res.userInfo) || {};
         doWxLogin({
@@ -166,7 +167,7 @@ Page({
         });
       },
       fail: (err) => {
-        console.warn("wx.getUserProfile 调用失败，继续执行微信登录", err);
+        console.warn("wx.getUserProfile failed, continue WeChat login", err);
         doWxLogin({});
       },
     });
@@ -176,7 +177,7 @@ Page({
     wx.navigateTo({
       url: "/pages/register/register",
       fail: (err) => {
-        console.error("跳转失败，请检查路径是否正确", err);
+        console.error("Navigation failed, please check the target path", err);
       },
     });
   },

@@ -38,7 +38,7 @@
       </block>
     </view>
 
-<!-- 中间悬浮按钮 -->
+<!-- Center Floating Button -->
 <view class="center-fab" bindtap="openSearchModal">
     <image 
     class="fab-icon"
@@ -47,11 +47,11 @@
   />
 </view>
 
-<!-- 搜索弹窗 -->
+<!-- Search Modal -->
 <view wx:if="{{showSearchModal}}" class="modal-mask" bindtap="closeSearchModal">
   <view class="modal-content" catchtap="preventClose">
     
-      <!-- 顶部关闭按钮 -->
+      <!-- Close Button -->
   <view class="modal-header">
     <view class="close-btn" bindtap="closeSearchModal">
       ✕
@@ -62,14 +62,14 @@
       <input 
         class="search-input"
         value="{{searchKeyword}}"
-        placeholder="输入关键词检索论文，留空使用默认"
+        placeholder="Search papers by keywords (leave empty for default)"
         bindinput="onInputChange"
         confirm-type="search"
         bindconfirm="onSearchConfirm"
       />
       <view class="search-btn" bindtap="onSearchTap">
-        <text wx:if="{{!searchLoading}}">搜索</text>
-        <text wx:else>检索中...</text>
+        <text wx:if="{{!searchLoading}}">Search</text>
+        <text wx:else>Searching...</text>
       </view>
     </view>
 

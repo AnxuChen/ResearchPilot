@@ -1,14 +1,14 @@
 <!--pages/Citations/index.wxml-->
 <view class="page">
 
-<!-- 背景渐变光斑 -->
+<!-- Background Glow -->
 <view class="bg-decoration">
   <view class="circle c1"></view>
   <view class="circle c2"></view>
   <view class="circle c3"></view>
 </view>
 
-<!-- 标题区域 -->
+<!-- Header -->
 <view class="header">
   <view class="title">
     <text class="title-main">Format</text>
@@ -54,7 +54,7 @@
   </view>
 </view>
 
-<!-- 中间箭头按钮 -->
+<!-- Action Button -->
 <view class="arrow-wrapper">
   <view class="arrow-btn" bindtap="onFormatCitations">
     <text wx:if="{{isSubmitting}}">...</text>
@@ -138,7 +138,7 @@
         class="delete-btn"
         data-id="{{item.id}}"
         catchtap="onDeleteRecentFormat"
-      >删除</text>
+      >Delete</text>
       <text class="arrow">›</text>
     </view>
   </view>

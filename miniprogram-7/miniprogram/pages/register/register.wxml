@@ -1,13 +1,13 @@
 <!--pages/register/register.wxml-->
 <view class="page">
 
-<!-- 背景装饰 -->
+<!-- Background -->
 <view class="blob sunny"></view>
 <view class="blob orange"></view>
 <view class="blob pink"></view>
 
 
-<!-- 浮动图标 -->
+<!-- Floating Icons -->
 <text class="float-icon science">⚗️</text>
 <text class="float-icon edit">✏️</text>
 
@@ -25,7 +25,7 @@
   </text>
 </view>
 
-<!-- 表单 -->
+<!-- Form -->
 <view class="form">
 
   <view class="field">
@@ -82,7 +82,7 @@
     <text>Sign Up →</text>
   </view>
 
-  <!-- 登录入口 -->
+  <!-- Login Entry -->
   <view class="login-tip">
     Already have a lab pass?
     <text class="login-link" bindtap="goLogin">Log in</text>
