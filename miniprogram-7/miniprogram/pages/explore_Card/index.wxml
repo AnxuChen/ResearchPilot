@@ -17,18 +17,18 @@
   </view>
 
   <view class="page-header">
-    <view class="title-line">Quick</view>
-    <view class="title-line highlight">Reads</view>
+    <view class="title-line">{{language === 'zh' ? '快速' : 'Quick'}}</view>
+    <view class="title-line highlight">{{language === 'zh' ? '阅读' : 'Reads'}}</view>
   </view>
 
   <view class="search-panel">
-    <input class="search-input" type="text" value="{{keywords}}" bindinput="onKeywordInput" bindconfirm="onSearchTap" confirm-type="search" placeholder="Search papers by keywords" />
-    <button class="search-btn" loading="{{isLoading}}" bindtap="onSearchTap">Search</button>
+    <input class="search-input" type="text" value="{{keywords}}" bindinput="onKeywordInput" bindconfirm="onSearchTap" confirm-type="search" placeholder="{{language === 'zh' ? '输入关键词检索论文' : 'Search papers by keywords'}}" />
+    <button class="search-btn" loading="{{isLoading}}" bindtap="onSearchTap">{{language === 'zh' ? '搜索' : 'Search'}}</button>
   </view>
 
-  <view wx:if="{{isLoading}}" class="state-text">Loading recommended papers...</view>
+  <view wx:if="{{isLoading}}" class="state-text">{{language === 'zh' ? '正在获取推荐论文...' : 'Loading recommended papers...'}}</view>
   <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
-  <view wx:elif="{{papers.length === 0}}" class="state-text">No results. Try different keywords.</view>
+  <view wx:elif="{{papers.length === 0}}" class="state-text">{{language === 'zh' ? '暂无结果，换个关键词试试。' : 'No results. Try different keywords.'}}</view>
 
   <block wx:else>
     <swiper class="paper-swiper" 
@@ -41,7 +41,7 @@
           <view class="card-header">
             <view class="key-tag">
               <text class="star">★</text>
-              <text>{{index === 0 ? 'TOP MATCH' : 'RELEVANT'}}</text>
+              <text>{{index === 0 ? (language === 'zh' ? '最佳匹配' : 'TOP MATCH') : (language === 'zh' ? '相关' : 'RELEVANT')}}</text>
             </view>
             <view class="bookmark">{{item.yearText}}</view>
           </view>
@@ -54,12 +54,12 @@
           <view class="info-panel">
             <view class="panel-row">
               <view class="stat-item">
-                <text class="stat-label">AUTHORS</text>
+                <text class="stat-label">{{language === 'zh' ? '作者' : 'AUTHORS'}}</text>
                 <view class="authors-value">{{item.authorsText}}</view>
               </view>
               <view class="divider"></view>
               <view class="stat-item rating-item">
-                <text class="stat-label">CITATIONS</text>
+                <text class="stat-label">{{language === 'zh' ? '引用' : 'CITATIONS'}}</text>
                 <view class="rating-box">
                   <text class="rating-text">{{item.citationText}}</text>
                 </view>
@@ -72,17 +72,19 @@
               data-liked="{{item.likedByMe}}"
               catchtap="onTogglePaperLike"
             >
-              {{item.likedByMe ? 'Liked (in collection)' : 'Like & Collect'}}
+              {{item.likedByMe ? (language === 'zh' ? '已点赞（已收藏）' : 'Liked (in collection)') : (language === 'zh' ? '点赞并收藏' : 'Like & Collect')}}
             </view>
 
             <view class="full-summary-btn" catchtap="onPaperTap" data-id="{{item.id}}">
-              <text>OPEN DETAIL</text>
+              <text>{{language === 'zh' ? '查看详情' : 'OPEN DETAIL'}}</text>
               <text class="arrow">↗</text>
             </view>
           </view>
         </view>
       </swiper-item>
     </swiper>
-    <view class="swipe-hint">← Swipe to explore more ({{papers.length}}) →</view>
+    <view class="swipe-hint">
+      {{language === 'zh' ? '← 左右滑动查看更多（' : '← Swipe to explore more ('}}{{papers.length}}{{language === 'zh' ? '）→' : ') →'}}
+    </view>
   </block>
 </view>

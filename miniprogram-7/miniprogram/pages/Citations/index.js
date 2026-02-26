@@ -1,22 +1,34 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 const MAX_INPUT_CHARS = 500;
 const RECENT_LIMIT = 10;
 
-const STYLE_OPTIONS = [
-  { value: "APA7", label: "APA 7" },
-  { value: "MLA9", label: "MLA 9" },
-  { value: "CHICAGO", label: "Chicago" },
-  { value: "AUTO", label: "✨ Auto-Detect" },
-];
-const STYLE_SET = new Set(STYLE_OPTIONS.map((item) => item.value));
+const STYLE_SET = new Set(["APA7", "MLA9", "CHICAGO", "AUTO"]);
 
-function formatRecentTime(value) {
+function buildStyleOptions(language) {
+  const isZh = language === "zh";
+  return [
+    { value: "APA7", label: "APA 7" },
+    { value: "MLA9", label: "MLA 9" },
+    { value: "CHICAGO", label: isZh ? "芝加哥" : "Chicago" },
+    { value: "AUTO", label: isZh ? "✨ 自动识别" : "✨ Auto-Detect" },
+  ];
+}
+
+function formatRecentTime(value, language) {
+  const isZh = language === "zh";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   const diffMs = Date.now() - d.getTime();
-  if (diffMs < 60 * 1000) return "just now";
-  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+  if (diffMs < 60 * 1000) return isZh ? "刚刚" : "just now";
+  if (diffMs < 60 * 60 * 1000) {
+    const mins = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+    return isZh ? `${mins}分钟前` : `${mins}m ago`;
+  }
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    const hours = Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)));
+    return isZh ? `${hours}小时前` : `${hours}h ago`;
+  }
   const year = d.getFullYear();
   const month = `${d.getMonth() + 1}`.padStart(2, "0");
   const day = `${d.getDate()}`.padStart(2, "0");
@@ -32,7 +44,7 @@ function normalizeStyle(value, fallback = "AUTO") {
   return fallback;
 }
 
-function mapRecentFormat(item) {
+function mapRecentFormat(item, language) {
   const inputPayload =
     item && item.inputPayload && typeof item.inputPayload === "object"
       ? item.inputPayload
@@ -65,16 +77,17 @@ function mapRecentFormat(item) {
     detectedStyle,
     formattedText,
     notes,
-    timeText: formatRecentTime(item.createdAt),
+    timeText: formatRecentTime(item.createdAt, language),
     inputPreview: String(item.inputPreview || inputText || "").trim(),
   };
 }
 
 Page({
   data: {
+    language: "en",
     inputText: "",
     selectedStyle: "AUTO",
-    styleOptions: STYLE_OPTIONS,
+    styleOptions: buildStyleOptions("en"),
     outputText: "",
     styleUsed: "",
     detectedStyle: "",
@@ -86,7 +99,16 @@ Page({
   },
 
   onShow() {
+    this.syncLanguage();
     this.fetchRecentFormats();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({
+      language,
+      styleOptions: buildStyleOptions(language),
+    });
   },
 
   handleAuthError(err) {
@@ -131,7 +153,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "Failed to read clipboard",
+          title: this.data.language === "zh" ? "读取剪贴板失败" : "Failed to read clipboard",
           icon: "none",
         });
       },
@@ -147,7 +169,10 @@ Page({
     if (this.data.isSubmitting) return;
     const text = String(this.data.inputText || "").trim();
     if (!text) {
-      wx.showToast({ title: "Please enter citation text", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "请先输入引用文本" : "Please enter citation text",
+        icon: "none",
+      });
       return;
     }
 
@@ -177,9 +202,14 @@ Page({
       this.fetchRecentFormats();
     } catch (err) {
       if (this.handleAuthError(err)) return;
-      const msg = err?.response?.message || "Format failed, please retry";
+      const msg =
+        err?.response?.message ||
+        (this.data.language === "zh" ? "格式化失败，请稍后重试" : "Format failed, please retry");
       this.setData({ errorMsg: msg });
-      wx.showToast({ title: "Format failed", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "格式化失败" : "Format failed",
+        icon: "none",
+      });
     } finally {
       this.setData({ isSubmitting: false });
     }
@@ -188,13 +218,19 @@ Page({
   onCopyOutput() {
     const text = String(this.data.outputText || "").trim();
     if (!text) {
-      wx.showToast({ title: "No content to copy", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "暂无可复制内容" : "No content to copy",
+        icon: "none",
+      });
       return;
     }
     wx.setClipboardData({
       data: text,
       success: () => {
-        wx.showToast({ title: "Copied", icon: "success" });
+        wx.showToast({
+          title: this.data.language === "zh" ? "已复制" : "Copied",
+          icon: "success",
+        });
       },
     });
   },
@@ -212,7 +248,9 @@ Page({
           limit: RECENT_LIMIT,
         },
       });
-      const items = Array.isArray(resp?.items) ? resp.items.map(mapRecentFormat) : [];
+      const items = Array.isArray(resp?.items)
+        ? resp.items.map((item) => mapRecentFormat(item, this.data.language))
+        : [];
       this.setData({ recentItems: items });
     } catch (err) {
       if (this.handleAuthError(err)) return;
@@ -239,7 +277,7 @@ Page({
     });
 
     wx.showToast({
-      title: "Loaded from recent history",
+      title: this.data.language === "zh" ? "已载入历史格式化" : "Loaded from recent history",
       icon: "none",
     });
   },
@@ -260,13 +298,13 @@ Page({
         recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
       });
       wx.showToast({
-        title: "Deleted",
+        title: this.data.language === "zh" ? "已删除" : "Deleted",
         icon: "success",
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "Delete failed",
+        title: this.data.language === "zh" ? "删除失败" : "Delete failed",
         icon: "none",
       });
     }

@@ -1,5 +1,6 @@
 const app = getApp();
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
 function splitColumns(papers) {
   const left = [];
@@ -14,16 +15,17 @@ function splitColumns(papers) {
   return { left, right };
 }
 
-function normalizePaper(item) {
+function normalizePaper(item, language) {
+  const isZh = language === "zh";
   const authors = Array.isArray(item.authors) ? item.authors : [];
   const shortAbstract = (item.abstract || "").trim().slice(0, 120);
   return {
     id: item.id,
-    title: item.title || "Untitled Paper",
-    abstractShort: shortAbstract || "No abstract available.",
-    authorsText: authors.slice(0, 3).join(", ") || "Unknown authors",
-    yearText: item.year ? `${item.year}` : "Latest",
-    citationText: `Citations ${item.citationCount || 0}`,
+    title: item.title || (isZh ? "未命名论文" : "Untitled Paper"),
+    abstractShort: shortAbstract || (isZh ? "暂无摘要。" : "No abstract available."),
+    authorsText: authors.slice(0, 3).join(", ") || (isZh ? "未知作者" : "Unknown authors"),
+    yearText: item.year ? `${item.year}` : isZh ? "最新" : "Latest",
+    citationText: isZh ? `引用 ${item.citationCount || 0}` : `Citations ${item.citationCount || 0}`,
     source: item.source || "semantic_scholar",
     likedByMe: Boolean(item.likedByMe),
   };
@@ -48,6 +50,7 @@ function parseExplorePrefetch(value) {
 
 Page({
   data: {
+    language: "en",
     keywords: "",
     appliedKeywords: "",
     papers: [],
@@ -60,6 +63,7 @@ Page({
   },
 
   onLoad() {
+    this.syncLanguage();
     if (this.consumePrefetchedSearch()) {
       return;
     }
@@ -69,8 +73,18 @@ Page({
   },
 
   onShow() {
+    this.syncLanguage();
     this.syncTabBarSelection();
     this.consumePrefetchedSearch();
+  },
+
+  syncLanguage() {
+    const prevLanguage = this.data.language;
+    const language = getCurrentLanguage();
+    this.setData({ language });
+    if (prevLanguage && prevLanguage !== language && this.data.papers.length && !this.data.isLoading) {
+      this.fetchPapers(this.data.keywords || this.data.appliedKeywords || "");
+    }
   },
 
   syncTabBarSelection() {
@@ -113,7 +127,7 @@ Page({
 
   applyFeedResponse(resp, rawKeywords) {
     const keywords = String(rawKeywords || "").trim();
-    const papers = (resp.items || []).map(normalizePaper);
+    const papers = (resp.items || []).map((item) => normalizePaper(item, this.data.language));
     const columns = splitColumns(papers);
     const appliedKeywords =
       (resp.meta && resp.meta.appliedKeywords) || keywords || "";
@@ -157,7 +171,10 @@ Page({
         return;
       }
       this.setData({
-        errorMsg: "Failed to fetch papers, please retry",
+        errorMsg:
+          this.data.language === "zh"
+            ? "获取论文失败，请稍后重试"
+            : "Failed to fetch papers, please retry",
         source: "",
       });
     } finally {
@@ -231,7 +248,7 @@ Page({
         return;
       }
       wx.showToast({
-        title: "Like failed, please retry",
+        title: this.data.language === "zh" ? "点赞失败，请重试" : "Like failed, please retry",
         icon: "none",
       });
     } finally {

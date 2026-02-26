@@ -1,5 +1,6 @@
 const app = getApp();
 const { request } = require("../utils/request");
+const { getCurrentLanguage } = require("../utils/language");
 
 function normalizePath(value) {
   const raw = String(value || "").trim();
@@ -13,22 +14,19 @@ function parseAuthError(err) {
   return err.statusCode === 401;
 }
 
-Component({
-  data: {
-    selectedPath: "/pages/lab/index",
-    showSearchModal: false,
-    searchKeyword: "",
-    searchLoading: false,
+function buildTabs(language) {
+  const isZh = language === "zh";
+  return {
     leftTabs: [
       {
         pagePath: "/pages/lab/index",
-        text: "LAB",
+        text: isZh ? "实验室" : "LAB",
         iconPath: "/images/tabbar/lab.png",
         selectedIconPath: "/images/tabbar/lab_sel.png",
       },
       {
         pagePath: "/pages/projects/index",
-        text: "DDLS",
+        text: isZh ? "项目" : "PROJECTS",
         iconPath: "/images/tabbar/project.png",
         selectedIconPath: "/images/tabbar/project_sel.png",
       },
@@ -36,32 +34,53 @@ Component({
     rightTabs: [
       {
         pagePath: "/pages/explore/index",
-        text: "Explore",
+        text: isZh ? "文献库" : "LIBRARY",
         iconPath: "/images/tabbar/explore.png",
         selectedIconPath: "/images/tabbar/explore_sel.png",
       },
       {
         pagePath: "/pages/profile/index",
-        text: "PROFILE",
+        text: isZh ? "我的" : "PROFILE",
         iconPath: "/images/tabbar/profile.png",
         selectedIconPath: "/images/tabbar/profile_sel.png",
       },
     ],
+  };
+}
+
+Component({
+  data: {
+    selectedPath: "/pages/lab/index",
+    language: "en",
+    showSearchModal: false,
+    searchKeyword: "",
+    searchLoading: false,
+    ...buildTabs("en"),
   },
 
   lifetimes: {
     attached() {
+      this.syncLanguage();
       this.syncSelectedPath();
     },
   },
 
   pageLifetimes: {
     show() {
+      this.syncLanguage();
       this.syncSelectedPath();
     },
   },
 
   methods: {
+    syncLanguage() {
+      const language = getCurrentLanguage();
+      this.setData({
+        language,
+        ...buildTabs(language),
+      });
+    },
+
     syncSelectedPath() {
       const pages = getCurrentPages();
       const current = pages[pages.length - 1];
@@ -112,7 +131,10 @@ Component({
         shouldRelogin = parseAuthError(err);
         if (!shouldRelogin) {
           wx.showToast({
-            title: "Prefetch failed, switched to Explore",
+            title:
+              this.data.language === "zh"
+                ? "预加载失败，已切换到文献库"
+                : "Prefetch failed, switched to Library",
             icon: "none",
           });
         }

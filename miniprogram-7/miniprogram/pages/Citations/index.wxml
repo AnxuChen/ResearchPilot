@@ -11,11 +11,11 @@
 <!-- Header -->
 <view class="header">
   <view class="title">
-    <text class="title-main">Format</text>
-    <text class="title-gradient">Citations</text>
+    <text class="title-main">{{language === 'zh' ? '格式化' : 'Format'}}</text>
+    <text class="title-gradient">{{language === 'zh' ? '引用' : 'Citations'}}</text>
   </view>
   <text class="subtitle">
-    Paste your raw references and get perfectly formatted citations instantly.
+    {{language === 'zh' ? '粘贴原始引用内容，快速生成规范引用格式。' : 'Paste your raw references and get perfectly formatted citations instantly.'}}
   </text>
 </view>
 
@@ -26,12 +26,12 @@
       <view class="icon-circle blue">
         <text>↩</text>
       </view>
-      <text>Input Source</text>
+      <text>{{language === 'zh' ? '输入原文' : 'Input Source'}}</text>
     </view>
 
     <view class="actions">
-      <view class="btn-light" bindtap="onClearInput">Clear</view>
-      <view class="btn-blue" bindtap="onPasteInput">Paste</view>
+      <view class="btn-light" bindtap="onClearInput">{{language === 'zh' ? '清空' : 'Clear'}}</view>
+      <view class="btn-blue" bindtap="onPasteInput">{{language === 'zh' ? '粘贴' : 'Paste'}}</view>
     </view>
   </view>
 
@@ -40,7 +40,7 @@
     value="{{inputText}}"
     bindinput="onInputText"
     maxlength="500"
-    placeholder="e.g. Smith, J. (2020). The future of AI. Journal of Tech, 12(3), 45-67."
+    placeholder="{{language === 'zh' ? '例如：Smith, J. (2020)...' : 'e.g. Smith, J. (2020). The future of AI. Journal of Tech, 12(3), 45-67.'}}"
   />
 
   <view class="tag-row">
@@ -69,19 +69,19 @@
       <view class="icon-circle pink">
         <text>”</text>
       </view>
-      <text>Formatted Output</text>
+      <text>{{language === 'zh' ? '格式化结果' : 'Formatted Output'}}</text>
     </view>
 
   </view>
 
   <view class="output-box">
     <text wx:if="{{outputText}}" class="output-text">{{outputText}}</text>
-    <text wx:else>Output will appear here...</text>
+    <text wx:else>{{language === 'zh' ? '格式化结果将显示在这里...' : 'Output will appear here...'}}</text>
   </view>
 
   <view wx:if="{{styleUsed || detectedStyle}}" class="style-meta">
-    <text>Style Used: {{styleUsed || '-'}}</text>
-    <text>Detected: {{detectedStyle || '-'}}</text>
+    <text>{{language === 'zh' ? '使用格式：' : 'Style Used: '}}{{styleUsed || '-'}}</text>
+    <text>{{language === 'zh' ? '识别格式：' : 'Detected: '}}{{detectedStyle || '-'}}</text>
   </view>
   <view wx:if="{{notes.length}}" class="note-list">
     <view wx:for="{{notes}}" wx:key="index" class="note-item">• {{item}}</view>
@@ -96,7 +96,7 @@
     </view>
 
     <view class="copy-btn" bindtap="onCopyOutput">
-      ⧉ Copy to Clipboard
+      ⧉ {{language === 'zh' ? '复制到剪贴板' : 'Copy to Clipboard'}}
     </view>
   </view>
 </view>
@@ -104,16 +104,16 @@
 <!-- Recent Formats -->
 <view class="recent-section">
   <view class="recent-header">
-    <text class="recent-title">Recent Formats</text>
-    <text class="view-all" bindtap="fetchRecentFormats">REFRESH</text>
+    <text class="recent-title">{{language === 'zh' ? '最近格式化' : 'Recent Formats'}}</text>
+    <text class="view-all" bindtap="fetchRecentFormats">{{language === 'zh' ? '刷新' : 'REFRESH'}}</text>
   </view>
 
   <view wx:if="{{isRecentLoading && recentItems.length === 0}}" class="recent-empty">
-    <text class="meta-time">Loading...</text>
+    <text class="meta-time">{{language === 'zh' ? '加载中...' : 'Loading...'}}</text>
   </view>
 
   <view wx:if="{{!isRecentLoading && recentItems.length === 0}}" class="recent-empty">
-    <text class="meta-time">No recent formats yet.</text>
+    <text class="meta-time">{{language === 'zh' ? '暂无历史格式化记录。' : 'No recent formats yet.'}}</text>
   </view>
 
   <view
@@ -126,7 +126,7 @@
     <view class="recent-left">
       <view class="recent-icon">📄</view>
       <view>
-        <text class="recent-name">{{item.title || item.inputPreview || 'Untitled Format'}}</text>
+        <text class="recent-name">{{item.title || item.inputPreview || (language === 'zh' ? '未命名格式化' : 'Untitled Format')}}</text>
         <view class="recent-meta">
           <text class="meta-tag">{{item.styleUsed || item.styleRequested || 'AUTO'}}</text>
           <text class="meta-time">{{item.timeText}}</text>
@@ -138,7 +138,7 @@
         class="delete-btn"
         data-id="{{item.id}}"
         catchtap="onDeleteRecentFormat"
-      >Delete</text>
+      >{{language === 'zh' ? '删除' : 'Delete'}}</text>
       <text class="arrow">›</text>
     </view>
   </view>

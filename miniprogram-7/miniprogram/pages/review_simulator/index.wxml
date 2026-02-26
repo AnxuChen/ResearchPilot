@@ -1,7 +1,7 @@
 <view class="page">
   <view class="hero">
-    <text class="title">Review Simulator</text>
-    <text class="desc">Upload your manuscript. The AI reviewer will provide comments, a score, and an acceptance recommendation.</text>
+    <text class="title">{{language === 'zh' ? '审稿模拟器' : 'Review Simulator'}}</text>
+    <text class="desc">{{language === 'zh' ? '上传稿件后，AI 审稿人将给出评审意见、评分和录用建议。' : 'Upload your manuscript. The AI reviewer will provide comments, a score, and an acceptance recommendation.'}}</text>
   </view>
 
   <view class="upload-card">
@@ -12,7 +12,7 @@
     <text class="icon-text">☁</text>
   </view>
 
-  <text class="upload-title">Upload Files</text>
+  <text class="upload-title">{{language === 'zh' ? '上传文件' : 'Upload Files'}}</text>
   <text class="upload-sub">(PDF/TXT/MD)</text>
 
   <view class="file-meta" wx:if="{{selectedFileName}}">
@@ -28,11 +28,11 @@
   loading="{{isReviewing}}"
   disabled="{{isReviewing}}"
 >
-  {{isReviewing ? 'Reviewing...' : 'Start Review'}}
+  {{isReviewing ? (language === 'zh' ? '审稿中...' : 'Reviewing...') : (language === 'zh' ? '开始审稿' : 'Start Review')}}
 </button>
 
 <text class="task-status" wx:if="{{isReviewing}}">
-  Task Status: {{reviewStatus || 'PENDING'}}
+  {{language === 'zh' ? '任务状态' : 'Task Status'}}: {{reviewStatus || 'PENDING'}}
 </text>
 
 </view>
@@ -40,16 +40,16 @@
   <view class="result-card" wx:if="{{reviewResult}}">
     <view class="result-top">
       <text class="decision">{{reviewResult.decision}}</text>
-      <text class="score">Score {{reviewResult.score}} / 10</text>
+      <text class="score">{{language === 'zh' ? '评分' : 'Score'}} {{reviewResult.score}} / 10</text>
     </view>
 
     <view class="block">
-      <text class="block-title">Summary</text>
+      <text class="block-title">{{language === 'zh' ? '摘要' : 'Summary'}}</text>
       <text class="block-text">{{reviewResult.summary}}</text>
     </view>
 
     <view class="block" wx:if="{{reviewResult.strengths.length}}">
-      <text class="block-title">Strengths</text>
+      <text class="block-title">{{language === 'zh' ? '优点' : 'Strengths'}}</text>
       <view class="item" wx:for="{{reviewResult.strengths}}" wx:key="*this">
         <text class="dot">•</text>
         <text class="item-text">{{item}}</text>
@@ -57,7 +57,7 @@
     </view>
 
     <view class="block" wx:if="{{reviewResult.weaknesses.length}}">
-      <text class="block-title">Weaknesses</text>
+      <text class="block-title">{{language === 'zh' ? '不足' : 'Weaknesses'}}</text>
       <view class="item" wx:for="{{reviewResult.weaknesses}}" wx:key="*this">
         <text class="dot">•</text>
         <text class="item-text">{{item}}</text>
@@ -65,7 +65,7 @@
     </view>
 
     <view class="block" wx:if="{{reviewResult.suggestions.length}}">
-      <text class="block-title">Suggestions</text>
+      <text class="block-title">{{language === 'zh' ? '建议' : 'Suggestions'}}</text>
       <view class="item" wx:for="{{reviewResult.suggestions}}" wx:key="*this">
         <text class="dot">•</text>
         <text class="item-text">{{item}}</text>
@@ -76,15 +76,15 @@
   <!-- Recent reviews -->
   <view class="recent-section">
     <view class="section-header">
-      <text class="section-title">Recent Simulations</text>
-      <text class="view-all">{{recentItems.length}} items</text>
+      <text class="section-title">{{language === 'zh' ? '最近模拟' : 'Recent Simulations'}}</text>
+      <text class="view-all">{{recentItems.length}} {{language === 'zh' ? '条' : 'items'}}</text>
     </view>
 
     <view wx:if="{{isRecentLoading}}" class="recent-empty">
-      Loading recent simulations...
+      {{language === 'zh' ? '正在加载历史模拟...' : 'Loading recent simulations...'}}
     </view>
     <view wx:elif="{{!recentItems.length}}" class="recent-empty">
-      No review history yet. Start one simulation to generate records.
+      {{language === 'zh' ? '暂无审稿历史，先发起一次模拟吧。' : 'No review history yet. Start one simulation to generate records.'}}
     </view>
     <view wx:else>
       <view
@@ -107,7 +107,7 @@
             data-id="{{item.id}}"
             catchtap="onDeleteRecentSimulation"
           >
-            Delete
+            {{language === 'zh' ? '删除' : 'Delete'}}
           </view>
         </view>
       </view>
@@ -118,30 +118,30 @@
   <!-- Review tips -->
   <view class="tips-section">
     <view class="tips-header">
-      <text class="tips-title">Review Guide (Pro Tips)</text>
+      <text class="tips-title">{{language === 'zh' ? '审稿指南（建议）' : 'Review Guide (Pro Tips)'}}</text>
     </view>
 
     <view class="tip-item">
       <view class="tip-num">1</view>
       <view class="tip-content">
-        <text class="tip-bold">Completeness:</text>
-        <text>Ensure the uploaded file includes a full title, abstract, and main content.</text>
+        <text class="tip-bold">{{language === 'zh' ? '完整性：' : 'Completeness:'}}</text>
+        <text>{{language === 'zh' ? '请确保上传文件包含完整标题、摘要和正文内容。' : 'Ensure the uploaded file includes a full title, abstract, and main content.'}}</text>
       </view>
     </view>
 
     <view class="tip-item">
       <view class="tip-num">2</view>
       <view class="tip-content">
-        <text class="tip-bold">Scope:</text>
-        <text>The AI review follows general academic standards and is for reference only.</text>
+        <text class="tip-bold">{{language === 'zh' ? '范围：' : 'Scope:'}}</text>
+        <text>{{language === 'zh' ? 'AI 审稿遵循通用学术标准，仅供参考。' : 'The AI review follows general academic standards and is for reference only.'}}</text>
       </view>
     </view>
 
     <view class="tip-item">
       <view class="tip-num">3</view>
       <view class="tip-content">
-        <text class="tip-bold">Privacy:</text>
-        <text>Your data is handled carefully, and manuscripts are encrypted after processing.</text>
+        <text class="tip-bold">{{language === 'zh' ? '隐私：' : 'Privacy:'}}</text>
+        <text>{{language === 'zh' ? '你的数据将被谨慎处理，稿件处理后会进行加密。' : 'Your data is handled carefully, and manuscripts are encrypted after processing.'}}</text>
       </view>
     </view>
   </view>  

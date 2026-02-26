@@ -22,17 +22,16 @@
 <!-- Title -->
 <view class="title">
   <view>
-    <text class="line">Start Your</text>
+    <text class="line">{{language === 'zh' ? '开启你的' : 'Start Your'}}</text>
   </view>
   <view>
-    <text class="line gradient">Research Journey</text>
+    <text class="line gradient">{{language === 'zh' ? '科研之旅' : 'Research Journey'}}</text>
   </view>
 </view>
 
 <!-- Subtitle -->
 <view class="subtitle">
-  Your personal playground for academic
-  discovery and neural optimization.
+  {{language === 'zh' ? '你的专属学术探索与智能研究平台。' : 'Your personal playground for academic discovery and neural optimization.'}}
 </view>
 
 <!-- Form -->
@@ -42,7 +41,7 @@
     <input
       value="{{email}}"
       bindinput="onInputEmail"
-      placeholder="Academic Email"
+      placeholder="{{language === 'zh' ? '学术邮箱' : 'Academic Email'}}"
       placeholder-class="placeholder"
     />
   </view>
@@ -52,28 +51,28 @@
       value="{{password}}"
       bindinput="onInputPassword"
       password
-      placeholder="Password"
+      placeholder="{{language === 'zh' ? '密码' : 'Password'}}"
       placeholder-class="placeholder"
     />
   </view>
 
-  <view class="forgot">Forgot Password?</view>
+  <view class="forgot">{{language === 'zh' ? '忘记密码？' : 'Forgot Password?'}}</view>
 
   <!-- Primary Action -->
   <view class="btn primary" bindtap="onSignIn">
-    <text>Sign In →</text>
+    <text>{{language === 'zh' ? '登录' : 'Sign In'}} →</text>
   </view>
 
   <!-- Secondary Action -->
   <view class="btn secondary" bindtap="onCreate">
-    <text>Create Account</text>
+    <text>{{language === 'zh' ? '创建账号' : 'Create Account'}}</text>
   </view>
 
 </view>
 
 <!-- Third-party Sign In -->
 <view class="other">
-  <text class="other-text">Or continue with</text>
+  <text class="other-text">{{language === 'zh' ? '或使用以下方式继续' : 'Or continue with'}}</text>
   <view class="icons">
     <view class="icon" bindtap="onWxSignIn">
       <image class="wx-icon-img" src="/images/weixin.png" mode="aspectFit"></image>

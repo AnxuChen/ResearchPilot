@@ -18,60 +18,62 @@
       </view>
       <view class="author-info">
         <text class="author-name">{{paper.authorsText}}</text>
-        <text class="author-role">PRIMARY AUTHORS</text>
+        <text class="author-role">{{language === 'zh' ? '主要作者' : 'PRIMARY AUTHORS'}}</text>
       </view>
     </view>
 
     <view class="abstract-card">
       <view class="quote-icon">"</view>
-      <view class="card-label">Abstract</view>
+      <view class="card-label">{{language === 'zh' ? '摘要' : 'Abstract'}}</view>
       <view class="abstract-text">{{paper.abstract}}</view>
     </view>
 
     <view class="section-header">
-      <text>Paper Metadata</text>
+      <text>{{language === 'zh' ? '论文信息' : 'Paper Metadata'}}</text>
     </view>
 
     <view class="insight-card">
       <view class="insight-icon icon-yellow"></view>
       <view class="insight-content">
-        <text class="insight-title">Citations</text>
-        <text class="insight-desc">{{paper.citationCount}} total citations</text>
+        <text class="insight-title">{{language === 'zh' ? '引用' : 'Citations'}}</text>
+        <text class="insight-desc">
+          {{paper.citationCount}} {{language === 'zh' ? '次引用' : 'total citations'}}
+        </text>
       </view>
     </view>
 
     <view class="insight-card">
       <view class="insight-icon icon-red"></view>
       <view class="insight-content">
-        <text class="insight-title">Publication Venue</text>
-        <text class="insight-desc">{{paper.venue || 'ArXiv / Conference'}}</text>
+        <text class="insight-title">{{language === 'zh' ? '发表来源' : 'Publication Venue'}}</text>
+        <text class="insight-desc">{{paper.venue || (language === 'zh' ? 'ArXiv / 会议' : 'ArXiv / Conference')}}</text>
       </view>
     </view>
     <!-- Comments -->
 <view class="discussion-section">
   <view class="discussion-header">
-    <text class="discussion-title">Comments ({{comments.length}})</text>
+    <text class="discussion-title">{{language === 'zh' ? '评论' : 'Comments'}} ({{comments.length}})</text>
     <view class="comment-sort-group">
       <view
         class="sort-chip {{commentSortBy === 'time' ? 'active' : ''}}"
         data-sort="time"
         bindtap="onChangeCommentSort"
       >
-        Latest
+        {{language === 'zh' ? '最新' : 'Latest'}}
       </view>
       <view
         class="sort-chip {{commentSortBy === 'likes' ? 'active' : ''}}"
         data-sort="likes"
         bindtap="onChangeCommentSort"
       >
-        Top
+        {{language === 'zh' ? '热门' : 'Top'}}
       </view>
     </view>
   </view>
 
-  <view wx:if="{{commentsLoading}}" class="comment-state">Loading comments...</view>
+  <view wx:if="{{commentsLoading}}" class="comment-state">{{language === 'zh' ? '正在加载评论...' : 'Loading comments...'}}</view>
   <view wx:elif="{{commentsError}}" class="comment-state comment-state-error">{{commentsError}}</view>
-  <view wx:elif="{{!comments.length}}" class="comment-state">No comments yet. Be the first one.</view>
+  <view wx:elif="{{!comments.length}}" class="comment-state">{{language === 'zh' ? '暂无评论，来发表第一条吧。' : 'No comments yet. Be the first one.'}}</view>
 
   <view wx:else>
     <view 
@@ -112,15 +114,15 @@
 <!-- Bottom Input Bar -->
 <view class="bottom-input-bar">
   <view class="action-buttons">
-    <button class="action-btn btn-light" bindtap="onCopyLink">Copy Link</button>
-    <button class="action-btn btn-dark" bindtap="onOpenLink">Open Hint</button>
+    <button class="action-btn btn-light" bindtap="onCopyLink">{{language === 'zh' ? '复制链接' : 'Copy Link'}}</button>
+    <button class="action-btn btn-dark" bindtap="onOpenLink">{{language === 'zh' ? '打开提示' : 'Open Hint'}}</button>
   </view>
 
   <view class="input-row">
     <view class="input-wrapper">
       <input 
         class="comment-input" 
-        placeholder="Add a comment..." 
+        placeholder="{{language === 'zh' ? '写下你的评论...' : 'Add a comment...'}}" 
         confirm-type="send"
         bindconfirm="onSendComment"
         value="{{newComment}}"

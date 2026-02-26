@@ -1,40 +1,58 @@
 const app = getApp();
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
-function formatRelativeTime(value) {
-  if (!value) return "Unknown";
+function formatRelativeTime(value, language) {
+  const isZh = language === "zh";
+  if (!value) return isZh ? "未知" : "Unknown";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return isZh ? "未知" : "Unknown";
   const diffMs = Date.now() - date.getTime();
-  if (diffMs < 60 * 1000) return "Just now";
-  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
-  if (diffMs < 7 * 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (24 * 60 * 60 * 1000)))}d ago`;
+  if (diffMs < 60 * 1000) return isZh ? "刚刚" : "Just now";
+  if (diffMs < 60 * 60 * 1000) {
+    const minutes = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+    return isZh ? `${minutes}分钟前` : `${minutes}m ago`;
+  }
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    const hours = Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)));
+    return isZh ? `${hours}小时前` : `${hours}h ago`;
+  }
+  if (diffMs < 7 * 24 * 60 * 60 * 1000) {
+    const days = Math.max(1, Math.floor(diffMs / (24 * 60 * 60 * 1000)));
+    return isZh ? `${days}天前` : `${days}d ago`;
+  }
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function mapRecentReadingItem(item) {
+function mapRecentReadingItem(item, language) {
   return {
     id: item.id,
     title: String(item.title || "Untitled Paper").trim() || "Untitled Paper",
-    readAtText: formatRelativeTime(item.readAt),
+    readAtText: formatRelativeTime(item.readAt, language),
   };
 }
 
 Page({
   data: {
+    language: "en",
     user: null,
     recentReadings: [],
     recentReadingLoading: false,
   },
 
   onShow() {
+    this.syncLanguage();
     this.syncTabBarSelection();
     this.syncCurrentUser();
     this.fetchRecentReadings();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   handleAuthError(err) {
@@ -84,8 +102,9 @@ Page({
         auth: true,
         timeout: 20000,
       });
+      const language = this.data.language || "en";
       const items = Array.isArray(resp?.items)
-        ? resp.items.slice(0, 2).map(mapRecentReadingItem)
+        ? resp.items.slice(0, 2).map((item) => mapRecentReadingItem(item, language))
         : [];
       this.setData({
         recentReadings: items,

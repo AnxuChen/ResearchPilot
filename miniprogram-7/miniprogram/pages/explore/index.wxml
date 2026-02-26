@@ -14,8 +14,8 @@
   </view>
 
   <view class="page-header">
-    <view class="title-line">Explore</view>
-    <view class="title-line highlight">Fresh Ideas</view>
+    <view class="title-line">{{language === 'zh' ? '探索' : 'Explore'}}</view>
+    <view class="title-line highlight">{{language === 'zh' ? '灵感新知' : 'Fresh Ideas'}}</view>
   </view>
 
   <view class="search-panel">
@@ -26,20 +26,22 @@
       bindinput="onKeywordInput"
       bindconfirm="onSearchTap"
       confirm-type="search"
-      placeholder="Search papers by keywords (leave empty for default)"
+      placeholder="{{language === 'zh' ? '输入关键词检索论文（留空使用默认）' : 'Search papers by keywords (leave empty for default)'}}"
     />
-    <button class="search-btn" loading="{{isLoading}}" bindtap="onSearchTap">Search</button>
+    <button class="search-btn" loading="{{isLoading}}" bindtap="onSearchTap">{{language === 'zh' ? '搜索' : 'Search'}}</button>
   </view>
   <view class="search-meta">
-    <text class="search-meta-text">Current keywords: {{appliedKeywords || "default"}}</text>
+    <text class="search-meta-text">
+      {{language === 'zh' ? '当前关键词：' : 'Current keywords: '}}{{appliedKeywords || (language === 'zh' ? '默认' : 'default')}}
+    </text>
   </view>
   <view wx:if="{{source==='local_cache'}}" class="search-warning">
-    OpenAlex request failed. Fallback to local cache.
+    {{language === 'zh' ? 'OpenAlex 请求失败，已自动回退到本地缓存。' : 'OpenAlex request failed. Fallback to local cache.'}}
   </view>
 
-  <view wx:if="{{isLoading}}" class="state-text">Loading recommended papers...</view>
+  <view wx:if="{{isLoading}}" class="state-text">{{language === 'zh' ? '正在获取推荐论文...' : 'Loading recommended papers...'}}</view>
   <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
-  <view wx:elif="{{!papers.length}}" class="state-text">No results. Try different keywords.</view>
+  <view wx:elif="{{!papers.length}}" class="state-text">{{language === 'zh' ? '暂无结果，换个关键词试试。' : 'No results. Try different keywords.'}}</view>
 
   <view wx:else class="discovery-grid">
     <view class="grid-column">
@@ -58,7 +60,7 @@
                 data-liked="{{item.likedByMe}}"
                 catchtap="onTogglePaperLike"
               >
-                {{item.likedByMe ? 'Liked' : 'Like'}}
+                {{item.likedByMe ? (language === 'zh' ? '已赞' : 'Liked') : (language === 'zh' ? '点赞' : 'Like')}}
               </view>
             </view>
           </view>
@@ -82,7 +84,7 @@
                 data-liked="{{item.likedByMe}}"
                 catchtap="onTogglePaperLike"
               >
-                {{item.likedByMe ? 'Liked' : 'Like'}}
+                {{item.likedByMe ? (language === 'zh' ? '已赞' : 'Liked') : (language === 'zh' ? '点赞' : 'Like')}}
               </view>
             </view>
           </view>

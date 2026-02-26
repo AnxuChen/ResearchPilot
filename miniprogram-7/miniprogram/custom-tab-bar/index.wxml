@@ -62,14 +62,14 @@
       <input 
         class="search-input"
         value="{{searchKeyword}}"
-        placeholder="Search papers by keywords (leave empty for default)"
+        placeholder="{{language === 'zh' ? '输入关键词检索论文（留空使用默认）' : 'Search papers by keywords (leave empty for default)'}}"
         bindinput="onInputChange"
         confirm-type="search"
         bindconfirm="onSearchConfirm"
       />
       <view class="search-btn" bindtap="onSearchTap">
-        <text wx:if="{{!searchLoading}}">Search</text>
-        <text wx:else>Searching...</text>
+        <text wx:if="{{!searchLoading}}">{{language === 'zh' ? '搜索' : 'Search'}}</text>
+        <text wx:else>{{language === 'zh' ? '检索中...' : 'Searching...'}}</text>
       </view>
     </view>
 

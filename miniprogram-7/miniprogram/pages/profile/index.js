@@ -1,5 +1,6 @@
 // pages/profile/index.js
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 const COLLECTED_ICON_CLASSES = ["bg-indigo-gradient", "bg-teal-gradient", "bg-pink-gradient"];
 const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
 const DEFAULT_BADGE = {
@@ -37,11 +38,11 @@ function buildDisplayName(user) {
   return "User";
 }
 
-function buildBio(user) {
+function buildBio(user, language) {
   const fieldOfStudy =
     (user && user.fieldOfStudy ? String(user.fieldOfStudy).trim() : "") || "";
   if (fieldOfStudy) return fieldOfStudy;
-  return "Design-minded academic explorer";
+  return language === "zh" ? "设计驱动的学术探索者" : "Design-minded academic explorer";
 }
 
 function normalizeCollectedPaper(item, index) {
@@ -109,6 +110,7 @@ function resolveBadgeDisplay(userId) {
 
 Page({
   data: {
+    language: "en",
     userName: "User",
     userBio: "Design-minded academic explorer",
     avatarUrl: "/images/profile/user.png",
@@ -122,8 +124,14 @@ Page({
   },
 
   onShow() {
+    this.syncLanguage();
     this.syncTabBarSelection();
     this.syncProfile();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   syncTabBarSelection() {
@@ -173,7 +181,7 @@ Page({
       });
       this.setData({
         userName: buildDisplayName(user),
-        userBio: buildBio(user),
+        userBio: buildBio(user, this.data.language),
         avatarUrl: user.avatarUrl || "/images/profile/user.png",
         ...resolveBadgeDisplay(user.id),
       });
@@ -186,7 +194,7 @@ Page({
       const cachedUser = wx.getStorageSync("user") || {};
       this.setData({
         userName: buildDisplayName(cachedUser),
-        userBio: buildBio(cachedUser),
+        userBio: buildBio(cachedUser, this.data.language),
         avatarUrl: cachedUser.avatarUrl || "/images/profile/user.png",
         ...resolveBadgeDisplay(cachedUser.id),
       });
@@ -213,7 +221,10 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        collectedError: "Failed to load collected papers, please retry",
+        collectedError:
+          this.data.language === "zh"
+            ? "加载收藏论文失败，请稍后重试"
+            : "Failed to load collected papers, please retry",
       });
     } finally {
       this.setData({

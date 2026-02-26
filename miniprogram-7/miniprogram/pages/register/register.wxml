@@ -18,10 +18,9 @@
     <text class="spark">✨</text>
   </view>
 
-  <text class="title">Join the Lab</text>
+  <text class="title">{{language === 'zh' ? '加入实验室' : 'Join the Lab'}}</text>
   <text class="subtitle">
-    Create your playground to explore,
-    design, and manage research.
+    {{language === 'zh' ? '创建你的研究空间，探索、打磨并管理科研任务。' : 'Create your playground to explore, design, and manage research.'}}
   </text>
 </view>
 
@@ -29,63 +28,63 @@
 <view class="form">
 
   <view class="field">
-    <text class="label">Full Name</text>
+    <text class="label">{{language === 'zh' ? '姓名' : 'Full Name'}}</text>
     <view class="input-box">
       <text class="icon">👤</text>
       <input
         value="{{fullName}}"
         bindinput="onInputFullName"
-        placeholder="e.g. Marie Curie"
+        placeholder="{{language === 'zh' ? '例如：Marie Curie' : 'e.g. Marie Curie'}}"
       />
     </view>
   </view>
 
   <view class="field">
-    <text class="label">Academic Email</text>
+    <text class="label">{{language === 'zh' ? '学术邮箱' : 'Academic Email'}}</text>
     <view class="input-box">
       <text class="icon">✉️</text>
       <input
         value="{{email}}"
         bindinput="onInputEmail"
-        placeholder="name@university.edu"
+        placeholder="{{language === 'zh' ? 'name@university.edu' : 'name@university.edu'}}"
       />
     </view>
   </view>
 
   <view class="field">
-    <text class="label">Field of Study</text>
+    <text class="label">{{language === 'zh' ? '研究方向' : 'Field of Study'}}</text>
     <view class="input-box">
       <text class="icon">🔬</text>
       <input
         value="{{fieldOfStudy}}"
         bindinput="onInputFieldOfStudy"
-        placeholder="e.g. Neuroscience"
+        placeholder="{{language === 'zh' ? '例如：神经科学' : 'e.g. Neuroscience'}}"
       />
     </view>
   </view>
 
   <view class="field">
-    <text class="label">Password</text>
+    <text class="label">{{language === 'zh' ? '密码' : 'Password'}}</text>
     <view class="input-box">
       <text class="icon">🔒</text>
       <input
         value="{{password}}"
         bindinput="onInputPassword"
         password
-        placeholder="Create a strong password (>=8)"
+        placeholder="{{language === 'zh' ? '设置强密码（至少 8 位）' : 'Create a strong password (>=8)'}}"
       />
     </view>
   </view>
 
   <!-- Sign Up -->
   <view class="btn primary" bindtap="onSignUp">
-    <text>Sign Up →</text>
+    <text>{{language === 'zh' ? '注册' : 'Sign Up'}} →</text>
   </view>
 
   <!-- Login Entry -->
   <view class="login-tip">
-    Already have a lab pass?
-    <text class="login-link" bindtap="goLogin">Log in</text>
+    {{language === 'zh' ? '已有账号？' : 'Already have a lab pass?'}}
+    <text class="login-link" bindtap="goLogin">{{language === 'zh' ? '去登录' : 'Log in'}}</text>
   </view>
 
 </view>

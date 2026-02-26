@@ -1,6 +1,7 @@
 // pages/login/login.js
 const app = getApp();
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 const WECHAT_DEFAULT_NICKNAME = "\u5fae\u4fe1\u7528\u6237";
 
 function isWechatProfileIncomplete(user) {
@@ -13,9 +14,23 @@ function isWechatProfileIncomplete(user) {
 
 Page({
   data: {
+    language: "en",
     isLoading: false,
     email: "",
     password: "",
+  },
+
+  onLoad() {
+    this.syncLanguage();
+  },
+
+  onShow() {
+    this.syncLanguage();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   onInputEmail(e) {
@@ -58,7 +73,7 @@ Page({
     const password = this.data.password || "";
     if (!email || !password) {
       wx.showToast({
-        title: "Enter email and password",
+        title: this.data.language === "zh" ? "请输入邮箱和密码" : "Enter email and password",
         icon: "none",
       });
       return;
@@ -74,10 +89,15 @@ Page({
       this.routeAfterLogin(resp);
     } catch (err) {
       if (err.statusCode === 401) {
-        wx.showToast({ title: "Invalid email or password", icon: "none" });
+        wx.showToast({
+          title: this.data.language === "zh" ? "账号或密码错误" : "Invalid email or password",
+          icon: "none",
+        });
         return;
       }
-      const msg = err?.response?.message || "Sign in failed, please retry";
+      const msg =
+        err?.response?.message ||
+        (this.data.language === "zh" ? "登录失败，请重试" : "Sign in failed, please retry");
       wx.showToast({ title: msg, icon: "none" });
     } finally {
       this.setData({ isLoading: false });
@@ -91,7 +111,10 @@ Page({
       wx.login({
         success: async (loginRes) => {
           if (!loginRes.code) {
-            wx.showToast({ title: "Failed to get login code", icon: "none" });
+            wx.showToast({
+              title: this.data.language === "zh" ? "获取登录码失败" : "Failed to get login code",
+              icon: "none",
+            });
             this.setData({ isLoading: false });
             return;
           }
@@ -127,7 +150,7 @@ Page({
               } else {
                 console.error("Failed to call WeChat login API", err);
                 wx.showToast({
-                  title: "Network error, please retry",
+                  title: this.data.language === "zh" ? "网络异常，请稍后重试" : "Network error, please retry",
                   icon: "none",
                 });
               }
@@ -143,7 +166,7 @@ Page({
         fail: (err) => {
           console.error("wx.login failed", err);
           wx.showToast({
-            title: "WeChat sign in failed",
+            title: this.data.language === "zh" ? "微信登录失败" : "WeChat sign in failed",
             icon: "none",
           });
           this.setData({ isLoading: false });
@@ -158,7 +181,7 @@ Page({
     }
 
     wx.getUserProfile({
-      desc: "Used to complete your profile",
+      desc: this.data.language === "zh" ? "用于完善用户资料" : "Used to complete your profile",
       success: (res) => {
         const userInfo = (res && res.userInfo) || {};
         doWxLogin({

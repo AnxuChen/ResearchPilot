@@ -14,8 +14,8 @@
   </view>
 
   <view class="page-header">
-    <view class="title-line">Conference</view>
-    <view class="title-line highlight">Deadlines</view>
+    <view class="title-line">{{language === 'zh' ? '会议' : 'Conference'}}</view>
+    <view class="title-line highlight">{{language === 'zh' ? '截止日期' : 'Deadlines'}}</view>
   </view>
 
   <view class="card featured-card"
@@ -36,8 +36,8 @@
     </view>
     
     <view class="deadline-row">
-      <text class="label">SUBMISSION DEADLINE</text>
-      <text class="days-left">{{featuredConf.timeLeftStr}} Left</text>
+      <text class="label">{{language === 'zh' ? '投稿截止时间' : 'SUBMISSION DEADLINE'}}</text>
+      <text class="days-left">{{featuredConf.timeLeftStr}} {{language === 'zh' ? '剩余' : 'Left'}}</text>
     </view>
 
     <view class="progress-track">
@@ -45,7 +45,7 @@
     </view>
 
     <view class="note-box" wx:if="{{featuredConf.note}}">
-      <text class="note-label">Note:</text> {{featuredConf.note}}
+      <text class="note-label">{{language === 'zh' ? '备注：' : 'Note:'}}</text> {{featuredConf.note}}
     </view>
   </view>
 
@@ -56,7 +56,7 @@
       bindtap="onEditConference"
       data-item="{{item}}">
       <view class="card-top-row">
-        <text class="conf-label">CONF</text>
+        <text class="conf-label">{{language === 'zh' ? '会议' : 'CONF'}}</text>
         <view class="time-pill {{item.colorTheme}}-pill">{{item.timeLeftStr}}</view>
       </view>
       
@@ -65,7 +65,7 @@
       
       <view class="card-bottom">
         <view class="progress-info">
-          <text>Progress</text>
+          <text>{{language === 'zh' ? '进度' : 'Progress'}}</text>
           <text>{{item.progress}}%</text>
         </view>
         <view class="progress-track small-track">
@@ -87,7 +87,7 @@
   <!-- Header -->
   <view class="modal-header">
     <text class="modal-title">
-      {{isEdit ? 'Edit Conference' : 'Add Conference'}}
+      {{isEdit ? (language === 'zh' ? '编辑会议' : 'Edit Conference') : (language === 'zh' ? '新增会议' : 'Add Conference')}}
     </text>
 
     <view class="close-btn" bindtap="closeModal">
@@ -99,14 +99,14 @@
   <scroll-view scroll-y="true" class="modal-body">
 
     <view class="input-group">
-      <text class="input-label">ABBREVIATION</text>
+      <text class="input-label">{{language === 'zh' ? '会议简称' : 'ABBREVIATION'}}</text>
     <view class="input-box">
       <text class="input-icon">ID</text>
       <input
         value="{{formData.abbr}}"
         data-field="abbr"
         bindinput="onInputChange"
-        placeholder="e.g. CVPR, NeurIPS"
+        placeholder="{{language === 'zh' ? '例如 CVPR, NeurIPS' : 'e.g. CVPR, NeurIPS'}}"
         maxlength="10" 
       />
     </view>
@@ -114,28 +114,28 @@
 
     <!-- Conference Name -->
     <view class="input-group">
-      <text class="input-label">CONFERENCE NAME</text>
+      <text class="input-label">{{language === 'zh' ? '会议全称' : 'CONFERENCE NAME'}}</text>
       <view class="input-box">
         <text class="input-icon">🏷</text>
         <input
           value="{{formData.fullName}}"
           data-field="fullName"
           bindinput="onInputChange"
-          placeholder="Conference Name"
+          placeholder="{{language === 'zh' ? '会议名称' : 'Conference Name'}}"
         />
       </view>
     </view>
 
     <!-- Location -->
     <view class="input-group">
-      <text class="input-label">LOCATION</text>
+      <text class="input-label">{{language === 'zh' ? '地点' : 'LOCATION'}}</text>
       <view class="input-box">
         <text class="input-icon">📍</text>
         <input
           value="{{formData.location}}"
           data-field="location"
           bindinput="onInputChange"
-          placeholder="Location"
+          placeholder="{{language === 'zh' ? '地点' : 'Location'}}"
         />
       </view>
     </view>
@@ -144,7 +144,7 @@
     <view class="date-row">
 
       <view class="input-group small">
-        <text class="input-label">START DATE</text>
+        <text class="input-label">{{language === 'zh' ? '开始日期' : 'START DATE'}}</text>
         <view class="input-box">
           <text class="input-icon">📅</text>
           <input
@@ -157,7 +157,7 @@
       </view>
 
       <view class="input-group small">
-        <text class="input-label">DEADLINE</text>
+        <text class="input-label">{{language === 'zh' ? '截止日期' : 'DEADLINE'}}</text>
         <view class="input-box deadline">
           <text class="input-icon red">⏰</text>
           <input
@@ -165,7 +165,7 @@
             value="{{formData.deadline}}"
             data-field="deadline"
             bindinput="onInputChange"
-            placeholder="Nov 15, 2023"
+            placeholder="{{language === 'zh' ? '例如 2026-11-15' : 'e.g. 2026-11-15'}}"
           />
         </view>
       </view>
@@ -174,10 +174,10 @@
 
     <!-- Category -->
     <view class="category-group">
-      <text class="input-label">CATEGORY THEME</text>
+      <text class="input-label">{{language === 'zh' ? '分类主题' : 'CATEGORY THEME'}}</text>
 
       <view class="category-group">
-    <text class="input-label">COLOR THEME</text>
+    <text class="input-label">{{language === 'zh' ? '颜色主题' : 'COLOR THEME'}}</text>
     <view class="category-grid">
       <view 
         wx:for="{{themeOptions}}" 
@@ -196,8 +196,8 @@
     <!-- Note -->
     <view class="input-group">
       <view class="note-label">
-        <text class="input-label">NOTE</text>
-        <text class="optional">Optional</text>
+        <text class="input-label">{{language === 'zh' ? '备注' : 'NOTE'}}</text>
+        <text class="optional">{{language === 'zh' ? '可选' : 'Optional'}}</text>
       </view>
 
       <view class="textarea-box">
@@ -205,7 +205,7 @@
           value="{{formData.note}}"
           data-field="note"
           bindinput="onInputChange"
-          placeholder="Add details..."
+          placeholder="{{language === 'zh' ? '补充说明...' : 'Add details...'}}"
         />
       </view>
     </view>
@@ -216,12 +216,12 @@
   <view class="modal-footer">
   <view style="display: flex; gap: 20rpx;">
     <button wx:if="{{isEdit}}" class="delete-btn" bindtap="onDeleteConference">
-      <text>Delete</text>
+      <text>{{language === 'zh' ? '删除' : 'Delete'}}</text>
     </button>
     
     <button class="save-btn" style="flex: 1;" bindtap="onSaveConference">
       <text class="save-icon"></text>
-      <text>{{isEdit ? 'Apply' : 'Save'}}</text>
+      <text>{{isEdit ? (language === 'zh' ? '应用' : 'Apply') : (language === 'zh' ? '保存' : 'Save')}}</text>
     </button>
   </view>
 </view>

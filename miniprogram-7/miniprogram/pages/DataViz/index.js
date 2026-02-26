@@ -1,4 +1,5 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const SUPPORTED_EXTENSIONS = ["csv", "json", "xls", "xlsx"];
@@ -163,6 +164,7 @@ function deleteCloudFile(fileID) {
 
 Page({
   data: {
+    language: "en",
     selectedFileName: "",
     selectedFileSizeText: "",
     selectedFilePath: "",
@@ -188,6 +190,19 @@ Page({
 
   onUnload() {
     this.stopPolling();
+  },
+
+  onLoad() {
+    this.syncLanguage();
+  },
+
+  onShow() {
+    this.syncLanguage();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   handleAuthError(err) {
@@ -241,7 +256,9 @@ Page({
           isGenerating: false,
           taskId: "",
           taskStatus: "DONE",
-          chartTitle: result.title || "Generated Chart",
+          chartTitle:
+            result.title ||
+            (this.data.language === "zh" ? "生成图表" : "Generated Chart"),
           chartSummary: result.summary || "",
           chartInsights: Array.isArray(result.insights) ? result.insights : [],
           chartOptionText: optionText,
@@ -269,9 +286,12 @@ Page({
           taskId: "",
           taskStatus: "FAILED",
           chartOption: null,
-          errorMsg: task.error || "Chart generation failed",
+          errorMsg: task.error || (this.data.language === "zh" ? "图表生成失败" : "Chart generation failed"),
         });
-        wx.showToast({ title: task.error || "Chart generation failed", icon: "none" });
+        wx.showToast({
+          title: task.error || (this.data.language === "zh" ? "图表生成失败" : "Chart generation failed"),
+          icon: "none",
+        });
         return;
       }
 
@@ -289,7 +309,7 @@ Page({
           isGenerating: false,
           taskId: "",
           taskStatus: "FAILED",
-          errorMsg: "Generation timed out, please retry",
+          errorMsg: this.data.language === "zh" ? "生成超时，请稍后重试" : "Generation timed out, please retry",
         });
         return;
       }
@@ -305,18 +325,30 @@ Page({
       success: (res) => {
         const file = Array.isArray(res?.tempFiles) ? res.tempFiles[0] : null;
         if (!file?.path) {
-          wx.showToast({ title: "No file selected", icon: "none" });
+          wx.showToast({
+            title: this.data.language === "zh" ? "未选择文件" : "No file selected",
+            icon: "none",
+          });
           return;
         }
         if (file.size > MAX_FILE_SIZE_BYTES) {
-          wx.showToast({ title: "File too large (max 50MB)", icon: "none" });
+          wx.showToast({
+            title: this.data.language === "zh" ? "文件过大，请控制在50MB内" : "File too large (max 50MB)",
+            icon: "none",
+          });
           return;
         }
 
         const fileName = String(file.name || basename(file.path) || "dataset");
         const extension = extFromFileName(fileName);
         if (!SUPPORTED_EXTENSIONS.includes(extension)) {
-          wx.showToast({ title: "Only CSV/JSON/XLS/XLSX are supported", icon: "none" });
+          wx.showToast({
+            title:
+              this.data.language === "zh"
+                ? "仅支持 CSV/JSON/XLS/XLSX"
+                : "Only CSV/JSON/XLS/XLSX are supported",
+            icon: "none",
+          });
           return;
         }
 
@@ -337,7 +369,10 @@ Page({
         });
       },
       fail: () => {
-        wx.showToast({ title: "File selection canceled", icon: "none" });
+        wx.showToast({
+          title: this.data.language === "zh" ? "文件选择已取消" : "File selection canceled",
+          icon: "none",
+        });
       },
     });
   },
@@ -351,7 +386,10 @@ Page({
   async onGenerateChart() {
     if (this.data.isGenerating) return;
     if (!this.data.selectedFilePath || !this.data.selectedFileName) {
-      wx.showToast({ title: "Please upload a data file first", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "请先上传数据文件" : "Please upload a data file first",
+        icon: "none",
+      });
       return;
     }
 
@@ -406,14 +444,19 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       await deleteCloudFile(uploadedFileId);
-      const msg = err?.response?.message || "Chart generation failed, please retry";
+      const msg =
+        err?.response?.message ||
+        (this.data.language === "zh" ? "图表生成失败，请稍后重试" : "Chart generation failed, please retry");
       this.setData({
         isGenerating: false,
         taskStatus: "FAILED",
         chartOption: null,
         errorMsg: msg,
       });
-      wx.showToast({ title: "Chart generation failed", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "图表生成失败" : "Chart generation failed",
+        icon: "none",
+      });
     }
   },
 
@@ -426,12 +469,19 @@ Page({
   onCopyChartOption() {
     const text = String(this.data.chartOptionText || "").trim();
     if (!text) {
-      wx.showToast({ title: "No config to copy", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "暂无可复制配置" : "No config to copy",
+        icon: "none",
+      });
       return;
     }
     wx.setClipboardData({
       data: text,
-      success: () => wx.showToast({ title: "Config copied", icon: "success" }),
+      success: () =>
+        wx.showToast({
+          title: this.data.language === "zh" ? "配置已复制" : "Config copied",
+          icon: "success",
+        }),
     });
   },
 
@@ -439,13 +489,19 @@ Page({
     const plot = normalizePlotData(option, this.data.selectedChartType);
     if (!plot.points.length) {
       this.setData({
-        chartRenderHint: "Chart data is empty. Showing config only.",
+        chartRenderHint:
+          this.data.language === "zh"
+            ? "图表数据为空，当前仅显示配置。"
+            : "Chart data is empty. Showing config only.",
       });
       return;
     }
     if (plot.chartType === "heatmap") {
       this.setData({
-        chartRenderHint: "Heatmap preview is not available yet. Showing config and summary.",
+        chartRenderHint:
+          this.data.language === "zh"
+            ? "Heatmap 预览暂未开放，当前展示配置与摘要。"
+            : "Heatmap preview is not available yet. Showing config and summary.",
       });
       return;
     }
@@ -455,7 +511,12 @@ Page({
       .select("#chartCanvas")
       .boundingClientRect((rect) => {
         if (!rect || !rect.width || !rect.height) {
-          this.setData({ chartRenderHint: "Chart renderer init failed, please retry." });
+          this.setData({
+            chartRenderHint:
+              this.data.language === "zh"
+                ? "图表渲染初始化失败，请重试。"
+                : "Chart renderer init failed, please retry.",
+          });
           return;
         }
         this.drawPlot(plot, rect.width, rect.height);
@@ -476,13 +537,23 @@ Page({
     const plotW = safeWidth - pad.left - pad.right;
     const plotH = safeHeight - pad.top - pad.bottom;
     if (plotW <= 0 || plotH <= 0) {
-      this.setData({ chartRenderHint: "Chart area size is invalid, please retry." });
+      this.setData({
+        chartRenderHint:
+          this.data.language === "zh"
+            ? "图表区域尺寸异常，请重试。"
+            : "Chart area size is invalid, please retry.",
+      });
       return;
     }
 
     const yValues = plot.points.map((p) => p.yValue).filter(Number.isFinite);
     if (!yValues.length) {
-      this.setData({ chartRenderHint: "Invalid chart values. Showing config only." });
+      this.setData({
+        chartRenderHint:
+          this.data.language === "zh"
+            ? "图表数值无效，当前仅显示配置。"
+            : "Invalid chart values. Showing config only.",
+      });
       return;
     }
 

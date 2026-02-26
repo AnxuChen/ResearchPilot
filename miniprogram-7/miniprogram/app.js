@@ -1,12 +1,12 @@
 // app.js
 const runtimeConfig = require("./config/runtime");
+const { getCurrentLanguage } = require("./utils/language");
 
 App({
   onLaunch: function () {
     const cloudbaseConfig = runtimeConfig.cloudbase || {};
     const cloudEnv = cloudbaseConfig.env || "";
-    const savedLanguage = wx.getStorageSync("app_language");
-    const language = savedLanguage === "zh" ? "zh" : "en";
+    const language = getCurrentLanguage();
 
     this.globalData = {
       // direct-http | cloudbase-anyservice

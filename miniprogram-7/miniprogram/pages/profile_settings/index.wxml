@@ -1,24 +1,24 @@
 <view class="page">
   <view class="card">
-    <text class="title">Profile Settings</text>
-    <text class="desc">Update your avatar and nickname.</text>
+    <text class="title">{{selectedLanguage === 'zh' ? '个人设置' : 'Profile Settings'}}</text>
+    <text class="desc">{{selectedLanguage === 'zh' ? '更新你的头像、昵称和个性标签。' : 'Update your avatar, nickname, and profile tag.'}}</text>
 
     <button class="avatar-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
       <image class="avatar-img" src="{{displayAvatarUrl}}" mode="aspectFill"></image>
-      <text class="avatar-text">Choose Avatar</text>
+      <text class="avatar-text">{{selectedLanguage === 'zh' ? '选择头像' : 'Choose Avatar'}}</text>
     </button>
 
     <input
       class="nickname-input"
       type="nickname"
-      placeholder="Enter your nickname"
+      placeholder="{{selectedLanguage === 'zh' ? '输入昵称' : 'Enter your nickname'}}"
       value="{{nickname}}"
       bindinput="onInputNickname"
     />
 
     <view class="language-section">
-      <text class="language-title">Language</text>
-      <text class="language-desc">Choose your preferred app language.</text>
+      <text class="language-title">{{selectedLanguage === 'zh' ? '语言' : 'Language'}}</text>
+      <text class="language-desc">{{selectedLanguage === 'zh' ? '选择你偏好的小程序语言。' : 'Choose your preferred app language.'}}</text>
       <view class="language-options">
         <view
           wx:for="{{languageOptions}}"
@@ -27,14 +27,14 @@
           data-value="{{item.value}}"
           bindtap="onSelectLanguage"
         >
-          {{item.label}}
+          {{selectedLanguage === 'zh' ? item.labelZh : item.labelEn}}
         </view>
       </view>
     </view>
 
     <view class="badge-section">
-      <text class="badge-section-title">Profile Tag</text>
-      <text class="badge-section-desc">Choose a style and customize the label shown on your avatar.</text>
+      <text class="badge-section-title">{{selectedLanguage === 'zh' ? '头像标签' : 'Profile Tag'}}</text>
+      <text class="badge-section-desc">{{selectedLanguage === 'zh' ? '选择样式并自定义头像旁显示的标签文字。' : 'Choose a style and customize the label shown beside your avatar.'}}</text>
 
       <view class="badge-current {{selectedBadgeClass}}">
         <text class="badge-current-icon">{{selectedBadgeIcon}}</text>
@@ -60,14 +60,14 @@
         class="badge-input"
         type="text"
         maxlength="24"
-        placeholder="Enter tag text"
+        placeholder="{{selectedLanguage === 'zh' ? '输入标签文字' : 'Enter tag text'}}"
         value="{{badgeText}}"
         bindinput="onInputBadgeText"
       />
     </view>
 
     <button class="save-btn" loading="{{isSaving}}" bindtap="onSaveProfile">
-      Save
+      {{selectedLanguage === 'zh' ? '保存' : 'Save'}}
     </button>
   </view>
 </view>

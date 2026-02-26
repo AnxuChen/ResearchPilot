@@ -25,12 +25,12 @@
     <view class="stat-card">
       <view class="stat-header">
         <view class="icon-box bg-sunny-light">📖</view>
-        <text class="stat-label">READING</text>
+        <text class="stat-label">{{language === 'zh' ? '阅读' : 'READING'}}</text>
       </view>
       <view class="stat-content">
         <view class="stat-value-group">
           <text class="stat-number">2.5</text>
-          <text class="stat-unit">hrs</text>
+          <text class="stat-unit">{{language === 'zh' ? '小时' : 'hrs'}}</text>
         </view>
         <view class="bar-chart">
           <view class="bar" style="height: 40%; opacity: 0.3;"></view>
@@ -45,7 +45,7 @@
     <view class="stat-card">
       <view class="stat-header">
         <view class="icon-box bg-pink-light">🧠</view>
-        <text class="stat-label">FOCUS</text>
+        <text class="stat-label">{{language === 'zh' ? '专注' : 'FOCUS'}}</text>
       </view>
       <view class="stat-content-row">
   <view class="stat-left-column">
@@ -55,7 +55,7 @@
     </view>
     
     <view class="peak-state">
-      <text>📈 Peak State</text>
+      <text>{{language === 'zh' ? '📈 峰值状态' : '📈 Peak State'}}</text>
     </view>
   </view>
 
@@ -66,13 +66,19 @@
 
   <view class="papers-section">
     <view class="section-header">
-      <text class="section-title">Collected Papers ({{collectedPapers.length}})</text>
-      <view class="see-all">Liked</view>
+      <text class="section-title">
+        {{language === 'zh' ? '收藏论文' : 'Collected Papers'}} ({{collectedPapers.length}})
+      </text>
+      <view class="see-all">{{language === 'zh' ? '已点赞' : 'Liked'}}</view>
     </view>
 
-    <view wx:if="{{collectedLoading}}" class="paper-state">Loading collected papers...</view>
+    <view wx:if="{{collectedLoading}}" class="paper-state">
+      {{language === 'zh' ? '正在加载收藏论文...' : 'Loading collected papers...'}}
+    </view>
     <view wx:elif="{{collectedError}}" class="paper-state paper-state-error">{{collectedError}}</view>
-    <view wx:elif="{{!collectedPapers.length}}" class="paper-state">No collected papers yet. Try liking papers in Explore.</view>
+    <view wx:elif="{{!collectedPapers.length}}" class="paper-state">
+      {{language === 'zh' ? '暂无收藏论文，去 Explore 点赞试试' : 'No collected papers yet. Try liking papers in Explore.'}}
+    </view>
 
     <view wx:else class="paper-list">
       <view

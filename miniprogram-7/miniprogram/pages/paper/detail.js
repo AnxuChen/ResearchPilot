@@ -1,25 +1,37 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
-function formatDate(value) {
-  if (!value) return "Unknown";
+function formatDate(value, language) {
+  const isZh = language === "zh";
+  if (!value) return isZh ? "未知" : "Unknown";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return isZh ? "未知" : "Unknown";
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function formatRelativeTime(value) {
-  if (!value) return "Unknown";
+function formatRelativeTime(value, language) {
+  const isZh = language === "zh";
+  if (!value) return isZh ? "未知" : "Unknown";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown";
+  if (Number.isNaN(date.getTime())) return isZh ? "未知" : "Unknown";
   const diffMs = Date.now() - date.getTime();
-  if (diffMs < 60 * 1000) return "Just now";
-  if (diffMs < 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 1000))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (60 * 60 * 1000))}h ago`;
-  if (diffMs < 7 * 24 * 60 * 60 * 1000) return `${Math.floor(diffMs / (24 * 60 * 60 * 1000))}d ago`;
-  return formatDate(value);
+  if (diffMs < 60 * 1000) return isZh ? "刚刚" : "Just now";
+  if (diffMs < 60 * 60 * 1000) {
+    const mins = Math.floor(diffMs / (60 * 1000));
+    return isZh ? `${mins}分钟前` : `${mins}m ago`;
+  }
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diffMs / (60 * 60 * 1000));
+    return isZh ? `${hours}小时前` : `${hours}h ago`;
+  }
+  if (diffMs < 7 * 24 * 60 * 60 * 1000) {
+    const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+    return isZh ? `${days}天前` : `${days}d ago`;
+  }
+  return formatDate(value, language);
 }
 
 function buildInitial(name) {
@@ -32,12 +44,12 @@ function buildInitial(name) {
   return normalized.slice(0, 2).toUpperCase();
 }
 
-function normalizeComment(item) {
-  const nickname = String(item?.user?.nickname || "").trim() || "User";
+function normalizeComment(item, language) {
+  const nickname = String(item?.user?.nickname || "").trim() || (language === "zh" ? "用户" : "User");
   return {
     id: item.id,
     name: nickname,
-    timeText: formatRelativeTime(item.createdAt),
+    timeText: formatRelativeTime(item.createdAt, language),
     content: item.content || "",
     initial: buildInitial(nickname),
     likeCount: Number(item.likeCount || 0),
@@ -47,6 +59,7 @@ function normalizeComment(item) {
 
 Page({
   data: {
+    language: "en",
     paperId: "",
     paper: null,
     isLoading: true,
@@ -64,11 +77,15 @@ Page({
   },
 
   onLoad(options) {
+    this.syncLanguage();
     const paperId = decodeURIComponent(options.id || "").trim();
     if (!paperId) {
       this.setData({
         isLoading: false,
-        errorMsg: "Missing paper ID, unable to load details",
+        errorMsg:
+          this.data.language === "zh"
+            ? "缺少论文 ID，无法加载详情"
+            : "Missing paper ID, unable to load details",
       });
       return;
     }
@@ -77,6 +94,15 @@ Page({
       hasMarkedRead: false,
     });
     this.reloadPageData();
+  },
+
+  onShow() {
+    this.syncLanguage();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   onPullDownRefresh() {
@@ -120,12 +146,14 @@ Page({
       const tags = Array.isArray(resp.tags) ? resp.tags : [];
       const paper = {
         id: resp.id,
-        title: resp.title || "Untitled Paper",
-        abstract: resp.abstract || "No abstract available.",
+        title: resp.title || (this.data.language === "zh" ? "未命名论文" : "Untitled Paper"),
+        abstract:
+          resp.abstract || (this.data.language === "zh" ? "暂无摘要。" : "No abstract available."),
         authors,
-        authorsText: authors.join(", ") || "Unknown authors",
+        authorsText:
+          authors.join(", ") || (this.data.language === "zh" ? "未知作者" : "Unknown authors"),
         tags,
-        publishedText: formatDate(resp.publishedAt),
+        publishedText: formatDate(resp.publishedAt, this.data.language),
         venue: resp.venue || "",
         year: resp.year || "",
         citationCount: resp.citationCount || 0,
@@ -143,7 +171,10 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        errorMsg: "Failed to load paper details, please retry",
+        errorMsg:
+          this.data.language === "zh"
+            ? "获取论文详情失败，请稍后重试"
+            : "Failed to load paper details, please retry",
       });
     } finally {
       this.setData({ isLoading: false });
@@ -167,12 +198,17 @@ Page({
         method: "GET",
         auth: true,
       });
-      const comments = Array.isArray(resp.items) ? resp.items.map(normalizeComment) : [];
+      const comments = Array.isArray(resp.items)
+        ? resp.items.map((item) => normalizeComment(item, this.data.language))
+        : [];
       this.setData({ comments });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       this.setData({
-        commentsError: "Failed to load comments, please retry",
+        commentsError:
+          this.data.language === "zh"
+            ? "加载评论失败，请稍后重试"
+            : "Failed to load comments, please retry",
       });
     } finally {
       this.setData({
@@ -206,7 +242,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Failed to post comment",
+          title: this.data.language === "zh" ? "评论发送失败" : "Failed to post comment",
           icon: "none",
         });
       }
@@ -240,7 +276,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Action failed",
+          title: this.data.language === "zh" ? "操作失败" : "Action failed",
           icon: "none",
         });
       }
@@ -276,7 +312,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Favorite update failed",
+          title: this.data.language === "zh" ? "收藏操作失败" : "Favorite update failed",
           icon: "none",
         });
       }
@@ -304,13 +340,19 @@ Page({
   onCopyLink() {
     const link = this.data.paper && this.data.paper.link ? this.data.paper.link : "";
     if (!link) {
-      wx.showToast({ title: "No link to copy", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "暂无可复制链接" : "No link to copy",
+        icon: "none",
+      });
       return;
     }
     wx.setClipboardData({
       data: link,
       success: () => {
-        wx.showToast({ title: "Link copied", icon: "success" });
+        wx.showToast({
+          title: this.data.language === "zh" ? "链接已复制" : "Link copied",
+          icon: "success",
+        });
       },
     });
   },
@@ -318,15 +360,21 @@ Page({
   onOpenLink() {
     const link = this.data.paper && this.data.paper.link ? this.data.paper.link : "";
     if (!link) {
-      wx.showToast({ title: "No link available", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "暂无可打开链接" : "No link available",
+        icon: "none",
+      });
       return;
     }
     wx.setClipboardData({
       data: link,
       success: () => {
         wx.showModal({
-          title: "Link copied",
-          content: "Paper link copied. You can open it in your browser.",
+          title: this.data.language === "zh" ? "链接已复制" : "Link copied",
+          content:
+            this.data.language === "zh"
+              ? "论文链接已复制，你可以在浏览器中打开。"
+              : "Paper link copied. You can open it in your browser.",
           showCancel: false,
         });
       },

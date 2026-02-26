@@ -1,19 +1,25 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
 const MIN_TEXT_LENGTH = 30;
 const MAX_TEXT_LENGTH = 20000;
 const RECENT_LIMIT = 10;
 
-function formatRecentTime(value) {
+function formatRecentTime(value, language) {
+  const isZh = language === "zh";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
 
   const now = Date.now();
   const diffMs = now - d.getTime();
-  if (diffMs < 60 * 1000) return "just now";
-  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
+  if (diffMs < 60 * 1000) return isZh ? "刚刚" : "just now";
+  if (diffMs < 60 * 60 * 1000) {
+    const mins = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+    return isZh ? `${mins}分钟前` : `${mins}m ago`;
+  }
   if (diffMs < 24 * 60 * 60 * 1000) {
-    return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+    const hours = Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)));
+    return isZh ? `${hours}小时前` : `${hours}h ago`;
   }
 
   const year = d.getFullYear();
@@ -22,7 +28,7 @@ function formatRecentTime(value) {
   return `${year}-${month}-${day}`;
 }
 
-function mapRecentPolish(item) {
+function mapRecentPolish(item, language) {
   const inputPayload =
     item && item.inputPayload && typeof item.inputPayload === "object"
       ? item.inputPayload
@@ -48,14 +54,15 @@ function mapRecentPolish(item) {
     outputText,
     improvements,
     tone,
-    toneLabel: tone === "FORMAL" ? "Formal" : "Academic",
-    timeText: formatRecentTime(item.createdAt),
+    toneLabel: tone === "FORMAL" ? (language === "zh" ? "正式" : "Formal") : language === "zh" ? "学术" : "Academic",
+    timeText: formatRecentTime(item.createdAt, language),
     inputPreview: String(item.inputPreview || inputText || "").trim(),
   };
 }
 
 Page({
   data: {
+    language: "en",
     inputText: "",
     outputText: "",
     improvements: [],
@@ -66,7 +73,13 @@ Page({
   },
 
   onShow() {
+    this.syncLanguage();
     this.fetchRecentPolishes();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   handleAuthError(err) {
@@ -108,7 +121,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "Failed to read clipboard",
+          title: this.data.language === "zh" ? "读取剪贴板失败" : "Failed to read clipboard",
           icon: "none",
         });
       },
@@ -120,21 +133,24 @@ Page({
     if (this.data.isSubmitting) return;
     if (!text) {
       wx.showToast({
-        title: "Please enter manuscript text",
+        title: this.data.language === "zh" ? "请先输入论文文本" : "Please enter manuscript text",
         icon: "none",
       });
       return;
     }
     if (text.length < MIN_TEXT_LENGTH) {
       wx.showToast({
-        title: `Please enter at least ${MIN_TEXT_LENGTH} characters`,
+        title:
+          this.data.language === "zh"
+            ? `至少输入 ${MIN_TEXT_LENGTH} 个字符`
+            : `Please enter at least ${MIN_TEXT_LENGTH} characters`,
         icon: "none",
       });
       return;
     }
     if (text.length > MAX_TEXT_LENGTH) {
       wx.showToast({
-        title: "Input too long, please shorten and retry",
+        title: this.data.language === "zh" ? "输入过长，请精简后重试" : "Input too long, please shorten and retry",
         icon: "none",
       });
       return;
@@ -161,10 +177,12 @@ Page({
       this.fetchRecentPolishes();
     } catch (err) {
       if (this.handleAuthError(err)) return;
-      const msg = err?.response?.message || "Polish failed, please retry";
+      const msg =
+        err?.response?.message ||
+        (this.data.language === "zh" ? "润色失败，请稍后重试" : "Polish failed, please retry");
       this.setData({ errorMsg: msg });
       wx.showToast({
-        title: "Polish failed",
+        title: this.data.language === "zh" ? "润色失败" : "Polish failed",
         icon: "none",
       });
     } finally {
@@ -176,7 +194,7 @@ Page({
     const outputText = String(this.data.outputText || "").trim();
     if (!outputText) {
       wx.showToast({
-        title: "No content to copy",
+        title: this.data.language === "zh" ? "暂无可复制内容" : "No content to copy",
         icon: "none",
       });
       return;
@@ -185,7 +203,7 @@ Page({
       data: outputText,
       success: () => {
         wx.showToast({
-          title: "Copied",
+          title: this.data.language === "zh" ? "已复制" : "Copied",
           icon: "success",
         });
       },
@@ -205,7 +223,9 @@ Page({
           limit: RECENT_LIMIT,
         },
       });
-      const items = Array.isArray(resp?.items) ? resp.items.map(mapRecentPolish) : [];
+      const items = Array.isArray(resp?.items)
+        ? resp.items.map((item) => mapRecentPolish(item, this.data.language))
+        : [];
       this.setData({ recentItems: items });
     } catch (err) {
       if (this.handleAuthError(err)) return;
@@ -229,7 +249,7 @@ Page({
     });
 
     wx.showToast({
-      title: "Loaded from recent history",
+      title: this.data.language === "zh" ? "已载入历史润色" : "Loaded from recent history",
       icon: "none",
     });
   },
@@ -250,13 +270,13 @@ Page({
         recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
       });
       wx.showToast({
-        title: "Deleted",
+        title: this.data.language === "zh" ? "已删除" : "Deleted",
         icon: "success",
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "Delete failed",
+        title: this.data.language === "zh" ? "删除失败" : "Delete failed",
         icon: "none",
       });
     }

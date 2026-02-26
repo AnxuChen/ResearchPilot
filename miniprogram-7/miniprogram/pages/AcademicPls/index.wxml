@@ -10,10 +10,10 @@
 
 <!-- Header -->
 <view class="header">
-  <text class="title">Academic</text>
-  <text class="title-gradient">Polisher</text>
+  <text class="title">{{language === 'zh' ? '学术' : 'Academic'}}</text>
+  <text class="title-gradient">{{language === 'zh' ? '润色' : 'Polisher'}}</text>
   <text class="subtitle">
-    Elevate your manuscript with AI-powered grammar and tone refinement.
+    {{language === 'zh' ? '使用 AI 语法和语气优化，提升你的论文表达质量。' : 'Elevate your manuscript with AI-powered grammar and tone refinement.'}}
   </text>
 </view>
 
@@ -22,12 +22,12 @@
   <view class="card-header">
     <view class="card-title">
       <view class="icon blue">✎</view>
-      <text>Input Manuscript</text>
+      <text>{{language === 'zh' ? '输入论文文本' : 'Input Manuscript'}}</text>
     </view>
 
     <view class="actions">
-      <view class="btn-light" bindtap="onClearInput">Clear</view>
-      <view class="btn-blue" bindtap="onPasteInput">Paste</view>
+      <view class="btn-light" bindtap="onClearInput">{{language === 'zh' ? '清空' : 'Clear'}}</view>
+      <view class="btn-blue" bindtap="onPasteInput">{{language === 'zh' ? '粘贴' : 'Paste'}}</view>
     </view>
   </view>
 
@@ -35,13 +35,13 @@
     class="textarea"
     value="{{inputText}}"
     bindinput="onInputText"
-    placeholder="Paste your paragraph here. For example: 'This study investigate the effect of...'"
+    placeholder="{{language === 'zh' ? '在此粘贴论文段落，例如：本研究探讨了……' : 'Paste your paragraph here. For example: This study investigates the effect of...'}}"
   />
 
   <view class="tag-row">
-    <view class="tag grammar">Grammar Check</view>
-    <view class="tag tone">Tone Adjust</view>
-    <view class="tag neutral">Conciseness</view>
+    <view class="tag grammar">{{language === 'zh' ? '语法检查' : 'Grammar Check'}}</view>
+    <view class="tag tone">{{language === 'zh' ? '语气调整' : 'Tone Adjust'}}</view>
+    <view class="tag neutral">{{language === 'zh' ? '简洁表达' : 'Conciseness'}}</view>
   </view>
 </view>
 
@@ -58,14 +58,14 @@
   <view class="card-header">
     <view class="card-title">
       <view class="icon green">✨</view>
-      <text>AI Polished</text>
+      <text>{{language === 'zh' ? 'AI 润色结果' : 'AI Polished'}}</text>
     </view>
 
   </view>
 
   <view class="output-box">
     <text wx:if="{{outputText}}" class="output-text">{{outputText}}</text>
-    <text wx:else>Polished text will appear here...</text>
+    <text wx:else>{{language === 'zh' ? '润色后的内容将显示在这里...' : 'Polished text will appear here...'}}</text>
   </view>
 
   <view wx:if="{{improvements.length}}" class="improve-list">
@@ -79,23 +79,23 @@
       <view class="circle-btn">👍</view>
     </view>
 
-    <view class="copy-btn" bindtap="onCopyOutput">Copy to Clipboard</view>
+    <view class="copy-btn" bindtap="onCopyOutput">{{language === 'zh' ? '复制到剪贴板' : 'Copy to Clipboard'}}</view>
   </view>
 </view>
 
 <!-- Recent -->
 <view class="recent-section">
   <view class="recent-header">
-    <text class="recent-title">Recent Polishes</text>
-    <text class="view-all" bindtap="fetchRecentPolishes">REFRESH</text>
+    <text class="recent-title">{{language === 'zh' ? '最近润色' : 'Recent Polishes'}}</text>
+    <text class="view-all" bindtap="fetchRecentPolishes">{{language === 'zh' ? '刷新' : 'REFRESH'}}</text>
   </view>
 
   <view wx:if="{{isRecentLoading && recentItems.length === 0}}" class="recent-empty">
-    <text class="meta-time">Loading...</text>
+    <text class="meta-time">{{language === 'zh' ? '加载中...' : 'Loading...'}}</text>
   </view>
 
   <view wx:if="{{!isRecentLoading && recentItems.length === 0}}" class="recent-empty">
-    <text class="meta-time">No recent polishes yet.</text>
+    <text class="meta-time">{{language === 'zh' ? '暂无历史润色记录。' : 'No recent polishes yet.'}}</text>
   </view>
 
   <view
@@ -108,7 +108,7 @@
     <view class="recent-left">
       <view class="recent-icon orange">Tt</view>
       <view>
-        <text class="recent-name">{{item.title || item.inputPreview || 'Untitled Polish'}}</text>
+        <text class="recent-name">{{item.title || item.inputPreview || (language === 'zh' ? '未命名润色' : 'Untitled Polish')}}</text>
         <view class="recent-meta">
           <text class="meta-tag purple">{{item.toneLabel}}</text>
           <text class="meta-time">{{item.timeText}}</text>
@@ -120,7 +120,7 @@
         class="delete-btn"
         data-id="{{item.id}}"
         catchtap="onDeleteRecentPolish"
-      >Delete</text>
+      >{{language === 'zh' ? '删除' : 'Delete'}}</text>
       <text class="arrow">›</text>
     </view>
   </view>

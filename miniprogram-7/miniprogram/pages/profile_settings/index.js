@@ -1,12 +1,11 @@
-const app = getApp();
 const { request } = require("../../utils/request");
 
 const DEFAULT_AVATAR = "/images/profile/user.png";
 const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
-const LANGUAGE_PREF_STORAGE_KEY = "app_language";
+const { getCurrentLanguage, setCurrentLanguage } = require("../../utils/language");
 const LANGUAGE_OPTIONS = [
-  { value: "en", label: "English" },
-  { value: "zh", label: "Chinese" },
+  { value: "en", labelEn: "English", labelZh: "英文" },
+  { value: "zh", labelEn: "Chinese", labelZh: "中文" },
 ];
 const BADGE_OPTIONS = [
   {
@@ -58,11 +57,6 @@ function getBadgeOptionByKey(value) {
   return BADGE_OPTIONS.find((item) => item.key === key) || BADGE_OPTIONS[0];
 }
 
-function normalizeLanguage(value) {
-  const language = String(value || "").trim().toLowerCase();
-  return language === "zh" ? "zh" : "en";
-}
-
 function getBadgePrefsMap() {
   const raw = wx.getStorageSync(BADGE_PREF_STORAGE_KEY);
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -111,7 +105,22 @@ Page({
   },
 
   onLoad() {
+    this.syncLanguage();
     this.bootstrap();
+  },
+
+  onShow() {
+    this.syncLanguage();
+  },
+
+  syncLanguage() {
+    const selectedLanguage = getCurrentLanguage();
+    wx.setNavigationBarTitle({
+      title: selectedLanguage === "zh" ? "个人设置" : "Profile Settings",
+    });
+    this.setData({
+      selectedLanguage,
+    });
   },
 
   handleAuthError(err) {
@@ -144,9 +153,7 @@ Page({
       const pref = getUserBadgePref(userId);
       const option = getBadgeOptionByKey(pref?.key);
       const badgeText = pref?.text || option.previewText;
-      const selectedLanguage = normalizeLanguage(
-        wx.getStorageSync(LANGUAGE_PREF_STORAGE_KEY) || app?.globalData?.language
-      );
+      const selectedLanguage = getCurrentLanguage();
 
       this.setData({
         userId,
@@ -164,22 +171,19 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "Failed to load profile",
+        title: this.data.selectedLanguage === "zh" ? "读取资料失败" : "Failed to load profile",
         icon: "none",
       });
     }
   },
 
   onSelectLanguage(e) {
-    const language = normalizeLanguage(e.currentTarget?.dataset?.value || "");
+    const language = setCurrentLanguage(e.currentTarget?.dataset?.value || "");
     if (language === this.data.selectedLanguage) return;
     this.setData({ selectedLanguage: language });
-    wx.setStorageSync(LANGUAGE_PREF_STORAGE_KEY, language);
-    if (app && app.globalData) {
-      app.globalData.language = language;
-    }
+    this.syncLanguage();
     wx.showToast({
-      title: language === "zh" ? "Language: Chinese" : "Language: English",
+      title: language === "zh" ? "已切换为中文" : "Language switched to English",
       icon: "none",
     });
   },
@@ -224,7 +228,10 @@ Page({
           success: (fileRes) => {
             const base64 = fileRes.data || "";
             if (!base64) {
-              wx.showToast({ title: "Avatar read failed", icon: "none" });
+              wx.showToast({
+                title: this.data.selectedLanguage === "zh" ? "头像读取失败" : "Avatar read failed",
+                icon: "none",
+              });
               return;
             }
             this.setData({
@@ -233,12 +240,18 @@ Page({
             });
           },
           fail: () => {
-            wx.showToast({ title: "Avatar read failed", icon: "none" });
+            wx.showToast({
+              title: this.data.selectedLanguage === "zh" ? "头像读取失败" : "Avatar read failed",
+              icon: "none",
+            });
           },
         });
       },
       fail: () => {
-        wx.showToast({ title: "Avatar process failed", icon: "none" });
+        wx.showToast({
+          title: this.data.selectedLanguage === "zh" ? "头像处理失败" : "Avatar process failed",
+          icon: "none",
+        });
       },
     });
   },
@@ -248,7 +261,7 @@ Page({
     const nickname = String(this.data.nickname || "").trim();
     if (!nickname) {
       wx.showToast({
-        title: "Nickname is required",
+        title: this.data.selectedLanguage === "zh" ? "请输入昵称" : "Nickname is required",
         icon: "none",
       });
       return;
@@ -280,7 +293,7 @@ Page({
       });
 
       wx.showToast({
-        title: "Saved",
+        title: this.data.selectedLanguage === "zh" ? "已保存" : "Saved",
         icon: "success",
       });
       setTimeout(() => {
@@ -289,7 +302,9 @@ Page({
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: err?.response?.message || "Save failed",
+        title:
+          err?.response?.message ||
+          (this.data.selectedLanguage === "zh" ? "保存失败" : "Save failed"),
         icon: "none",
       });
     } finally {

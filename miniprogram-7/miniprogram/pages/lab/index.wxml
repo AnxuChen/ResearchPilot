@@ -10,8 +10,8 @@
       </view>
 
       <view class="title-section">
-        <view class="title-main">Select</view>
-        <view class="title-gradient">Research Tool</view>
+        <view class="title-main">{{language === 'zh' ? '选择' : 'Select'}}</view>
+        <view class="title-gradient">{{language === 'zh' ? '研究工具' : 'Research Tool'}}</view>
       </view>
     </view>
 
@@ -29,13 +29,15 @@
     </view>
     
     <view class="card-body">
-      <text class="card-title">Review Simulator</text>
-      <text class="card-desc">Simulate peer review feedback using advanced LLMs trained on top-tier journals.</text>
+      <text class="card-title">{{language === 'zh' ? '审稿模拟器' : 'Review Simulator'}}</text>
+      <text class="card-desc">
+        {{language === 'zh' ? '使用先进大模型模拟同行评审反馈，生成评分与录用建议。' : 'Simulate peer review feedback using advanced LLMs trained on top-tier journals.'}}
+      </text>
     </view>
 
     <view class="card-footer">
       <button class="btn-launch" bindtap="onLaunchReviewSimulator">
-        LAUNCH <text class="arrow">→</text>
+        {{language === 'zh' ? '启动' : 'LAUNCH'}} <text class="arrow">→</text>
       </button>
     </view>
   </view>
@@ -46,18 +48,20 @@
     </view>
     <view class="card-row-content">
       <view class="flex-row">
-        <text class="card-subtitle">Academic Polisher</text>
-        <view class="badge-new">NEW</view>
+        <text class="card-subtitle">{{language === 'zh' ? '学术润色' : 'Academic Polisher'}}</text>
+        <view class="badge-new">{{language === 'zh' ? '新' : 'NEW'}}</view>
       </view>
-      <text class="card-desc-sm">Refine tone, clarity, and conciseness for your manuscript drafts.</text>
+      <text class="card-desc-sm">
+        {{language === 'zh' ? '提升论文草稿的语气、清晰度与简洁性。' : 'Refine tone, clarity, and conciseness for your manuscript drafts.'}}
+      </text>
       
       <view class="progress-bg">
         <view class="progress-fill" style="width: 75%;"></view>
       </view>
       
       <view class="card-meta">
-        <text class="meta-gray">75% Accuracy Boost</text>
-        <text class="meta-orange">v2.0 BETA</text>
+        <text class="meta-gray">{{language === 'zh' ? '准确率提升 75%' : '75% Accuracy Boost'}}</text>
+        <text class="meta-orange">{{language === 'zh' ? 'v2.0 测试版' : 'v2.0 BETA'}}</text>
       </view>
     </view>
   </view>
@@ -67,33 +71,35 @@
       <view class="icon-circle bg-blue-light">
         <image class="icon-md" src="/images/lab/chart.png"></image>
       </view>
-      <text class="grid-title">Data Viz</text>
-      <text class="grid-desc">CSV to Chart</text>
+      <text class="grid-title">{{language === 'zh' ? '数据可视化' : 'Data Viz'}}</text>
+      <text class="grid-desc">{{language === 'zh' ? 'CSV 转图表' : 'CSV to Chart'}}</text>
     </view>
 
     <view class="card grid-item" bindtap="onLaunchCitations">
       <view class="icon-circle bg-pink-light">
         <image class="icon-md" src="/images/lab/cite.png"></image>
       </view>
-      <text class="grid-title">Citations</text>
-      <text class="grid-desc">Auto-Format</text>
+      <text class="grid-title">{{language === 'zh' ? '引用格式' : 'Citations'}}</text>
+      <text class="grid-desc">{{language === 'zh' ? '自动格式化' : 'Auto-Format'}}</text>
     </view>
   </view>
 
   <view class="list-section">
     <view class="section-header">
       <view class="flex-row">
-        <text class="section-title">Recent Reading</text>
-        <view class="badge-count">{{recentReadings.length}} ITEMS</view>
+        <text class="section-title">{{language === 'zh' ? '最近阅读' : 'Recent Reading'}}</text>
+        <view class="badge-count">
+          {{recentReadings.length}} {{language === 'zh' ? '条' : 'ITEMS'}}
+        </view>
       </view>
     </view>
 
     <view wx:if="{{recentReadingLoading && recentReadings.length === 0}}" class="card list-item list-empty">
-      <text class="list-empty-text">Loading recent reading...</text>
+      <text class="list-empty-text">{{language === 'zh' ? '正在加载最近阅读...' : 'Loading recent reading...'}}</text>
     </view>
 
     <view wx:elif="{{recentReadings.length === 0}}" class="card list-item list-empty">
-      <text class="list-empty-text">No recent reading yet.</text>
+      <text class="list-empty-text">{{language === 'zh' ? '暂无最近阅读。' : 'No recent reading yet.'}}</text>
     </view>
 
     <block wx:else>
@@ -110,7 +116,7 @@
         <view class="list-content">
           <text class="list-title">{{item.title}}</text>
           <view class="list-meta">
-            <text class="tag-running">READ</text>
+            <text class="tag-running">{{language === 'zh' ? '已读' : 'READ'}}</text>
             <text class="time-ago">{{item.readAtText}}</text>
           </view>
         </view>

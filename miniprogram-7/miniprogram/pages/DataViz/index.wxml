@@ -11,23 +11,23 @@
 
 <!-- Header -->
 <view class="header">
-  <text class="title">Create</text>
-  <text class="title-gradient">Data Viz</text>
+  <text class="title">{{language === 'zh' ? '创建' : 'Create'}}</text>
+  <text class="title-gradient">{{language === 'zh' ? '数据可视化' : 'Data Viz'}}</text>
 </view>
 
 <!-- Upload Card -->
 <view class="card upload-card">
   <view>
-    <text class="card-title">Upload Data</text>
+    <text class="card-title">{{language === 'zh' ? '上传数据' : 'Upload Data'}}</text>
   </view>
   <view>
-    <text class="card-sub">Support for CSV, JSON, or Excel files.</text>
+    <text class="card-sub">{{language === 'zh' ? '支持 CSV、JSON 或 Excel 文件。' : 'Support for CSV, JSON, or Excel files.'}}</text>
   </view>
 
   <view class="upload-box" bindtap="onChooseFile">
     <view class="upload-icon">↑</view>
-    <text class="upload-main">Tap to browse files</text>
-    <text class="upload-sub">or drag and drop here</text>
+    <text class="upload-main">{{language === 'zh' ? '点击选择文件' : 'Tap to browse files'}}</text>
+    <text class="upload-sub">{{language === 'zh' ? '或拖拽文件到此处' : 'or drag and drop here'}}</text>
   </view>
   <view wx:if="{{selectedFileName}}" class="file-meta">
     <text>{{selectedFileName}}</text>
@@ -38,8 +38,8 @@
 <!-- Select Template -->
 <view class="section">
   <view class="section-header">
-    <text class="section-title">Select Template</text>
-    <text class="view-all">VIEW ALL</text>
+    <text class="section-title">{{language === 'zh' ? '选择模板' : 'Select Template'}}</text>
+    <text class="view-all">{{language === 'zh' ? '查看全部' : 'VIEW ALL'}}</text>
   </view>
 
   <!-- Line Chart -->
@@ -48,13 +48,13 @@
     data-type="line"
     bindtap="onSelectChartType"
   >
-    <view class="badge popular">POPULAR</view>
+    <view class="badge popular">{{language === 'zh' ? '热门' : 'POPULAR'}}</view>
 
     <view class="template-row">
       <view class="icon blue">📈</view>
       <view>
-        <text class="template-name">Line Chart</text>
-        <text class="template-desc">Best for trends over time</text>
+        <text class="template-name">{{language === 'zh' ? '折线图' : 'Line Chart'}}</text>
+        <text class="template-desc">{{language === 'zh' ? '适合展示时间趋势' : 'Best for trends over time'}}</text>
       </view>
     </view>
 
@@ -69,13 +69,13 @@
     data-type="scatter"
     bindtap="onSelectChartType"
   >
-    <view class="badge new">NEW</view>
+    <view class="badge new">{{language === 'zh' ? '新' : 'NEW'}}</view>
 
     <view class="template-row">
       <view class="icon orange">●</view>
       <view>
-        <text class="template-name">Scatter Plot</text>
-        <text class="template-desc">Show relationships & clusters</text>
+        <text class="template-name">{{language === 'zh' ? '散点图' : 'Scatter Plot'}}</text>
+        <text class="template-desc">{{language === 'zh' ? '展示关系与聚类' : 'Show relationships & clusters'}}</text>
       </view>
     </view>
 
@@ -96,8 +96,8 @@
     <view class="template-row">
       <view class="icon red">▦</view>
       <view>
-        <text class="template-name">Heatmap</text>
-        <text class="template-desc">Visualize density & intensity</text>
+        <text class="template-name">{{language === 'zh' ? '热力图' : 'Heatmap'}}</text>
+        <text class="template-desc">{{language === 'zh' ? '可视化密度与强度' : 'Visualize density & intensity'}}</text>
       </view>
     </view>
   </view>
@@ -106,15 +106,15 @@
 
 <view wx:if="{{chartOptionText || errorMsg || isGenerating}}" class="card output-card">
   <view class="output-head">
-    <text class="output-title">{{chartTitle || 'Generated Visualization'}}</text>
-    <text class="output-sub" wx:if="{{taskStatus}}">Status: {{taskStatus}}</text>
+    <text class="output-title">{{chartTitle || (language === 'zh' ? '生成可视化结果' : 'Generated Visualization')}}</text>
+    <text class="output-sub" wx:if="{{taskStatus}}">{{language === 'zh' ? '状态' : 'Status'}}: {{taskStatus}}</text>
   </view>
 
-  <view wx:if="{{isGenerating}}" class="state-text">AI is generating your chart, please wait...</view>
+  <view wx:if="{{isGenerating}}" class="state-text">{{language === 'zh' ? 'AI 正在生成图表，请稍候...' : 'AI is generating your chart, please wait...'}}</view>
   <view wx:elif="{{errorMsg}}" class="state-text state-error">{{errorMsg}}</view>
   <view wx:else>
     <view wx:if="{{chartSummary}}" class="summary">{{chartSummary}}</view>
-    <view wx:if="{{chartProvider}}" class="provider-pill">Provider: {{chartProvider}}</view>
+    <view wx:if="{{chartProvider}}" class="provider-pill">{{language === 'zh' ? '提供方' : 'Provider'}}: {{chartProvider}}</view>
     <view wx:if="{{chartInsights.length}}" class="insights">
       <view wx:for="{{chartInsights}}" wx:key="index" class="insight-item">• {{item}}</view>
     </view>
@@ -124,10 +124,10 @@
     <view wx:if="{{chartRenderHint}}" class="state-text">{{chartRenderHint}}</view>
     <view class="option-actions">
       <view class="copy-option-btn" bindtap="onToggleOptionText">
-        {{showOptionText ? 'Hide Config JSON' : 'View Config JSON'}}
+        {{showOptionText ? (language === 'zh' ? '隐藏配置 JSON' : 'Hide Config JSON') : (language === 'zh' ? '查看配置 JSON' : 'View Config JSON')}}
       </view>
       <view class="copy-option-btn copy-secondary" bindtap="onCopyChartOption">
-        Copy Chart Config (ECharts Option)
+        {{language === 'zh' ? '复制图表配置（ECharts Option）' : 'Copy Chart Config (ECharts Option)'}}
       </view>
     </view>
     <view wx:if="{{showOptionText}}" class="option-box">
@@ -139,8 +139,8 @@
 <!-- Generate Button -->
 <view class="bottom-area">
   <view class="generate-btn" bindtap="onGenerateChart">
-    <text wx:if="{{isGenerating}}">GENERATING...</text>
-    <text wx:else>GENERATE CHART →</text>
+    <text wx:if="{{isGenerating}}">{{language === 'zh' ? '生成中...' : 'GENERATING...'}}</text>
+    <text wx:else>{{language === 'zh' ? '生成图表' : 'GENERATE CHART'}} →</text>
   </view>
 </view>
 

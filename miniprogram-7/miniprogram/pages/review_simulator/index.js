@@ -1,4 +1,5 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const SUPPORTED_EXTENSIONS = ["pdf", "txt", "md"];
@@ -23,13 +24,20 @@ function basename(filePath = "") {
   return parts[parts.length - 1] || "";
 }
 
-function formatRecentTime(value) {
+function formatRecentTime(value, language) {
+  const isZh = language === "zh";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "";
   const diffMs = Date.now() - d.getTime();
-  if (diffMs < 60 * 1000) return "just now";
-  if (diffMs < 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 1000)))}m ago`;
-  if (diffMs < 24 * 60 * 60 * 1000) return `${Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)))}h ago`;
+  if (diffMs < 60 * 1000) return isZh ? "刚刚" : "just now";
+  if (diffMs < 60 * 60 * 1000) {
+    const mins = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+    return isZh ? `${mins}分钟前` : `${mins}m ago`;
+  }
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    const hours = Math.max(1, Math.floor(diffMs / (60 * 60 * 1000)));
+    return isZh ? `${hours}小时前` : `${hours}h ago`;
+  }
   const year = d.getFullYear();
   const month = `${d.getMonth() + 1}`.padStart(2, "0");
   const day = `${d.getDate()}`.padStart(2, "0");
@@ -56,7 +64,7 @@ function normalizeReview(review) {
   };
 }
 
-function mapRecentSimulation(item) {
+function mapRecentSimulation(item, language) {
   const inputPayload =
     item && item.inputPayload && typeof item.inputPayload === "object"
       ? item.inputPayload
@@ -70,16 +78,16 @@ function mapRecentSimulation(item) {
       ? outputPayload.review
       : outputPayload;
   const review = normalizeReview(rawReview);
-  const fileName = String(inputPayload.fileName || item?.title || "Manuscript").trim();
+  const fileName = String(inputPayload.fileName || item?.title || (language === "zh" ? "稿件" : "Manuscript")).trim();
   const extension = String(
     inputPayload.extension || extFromFileName(fileName) || ""
   ).toLowerCase();
   return {
     id: item.id,
-    fileName: fileName || "Manuscript",
+    fileName: fileName || (language === "zh" ? "稿件" : "Manuscript"),
     extension,
     iconClass: recentIconClass(extension),
-    timeText: formatRecentTime(item?.createdAt),
+    timeText: formatRecentTime(item?.createdAt, language),
     scoreText: `${review.score}/10`,
     decision: review.decision,
     review,
@@ -140,6 +148,7 @@ function deleteCloudFile(fileID) {
 
 Page({
   data: {
+    language: "en",
     selectedFileName: "",
     selectedFileSizeText: "",
     selectedFilePath: "",
@@ -154,7 +163,13 @@ Page({
   },
 
   onShow() {
+    this.syncLanguage();
     this.fetchRecentSimulations();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({ language });
   },
 
   onUnload() {
@@ -222,7 +237,7 @@ Page({
           reviewStatus: "FAILED",
         });
         wx.showToast({
-          title: task.error || "Review failed, please retry",
+          title: task.error || (this.data.language === "zh" ? "审稿失败，请重试" : "Review failed, please retry"),
           icon: "none",
         });
         return;
@@ -245,7 +260,7 @@ Page({
           reviewStatus: "FAILED",
         });
         wx.showToast({
-          title: "Review timed out, try again later",
+          title: this.data.language === "zh" ? "审稿超时，请稍后重试" : "Review timed out, try again later",
           icon: "none",
         });
         return;
@@ -262,12 +277,15 @@ Page({
       success: (res) => {
         const file = Array.isArray(res?.tempFiles) ? res.tempFiles[0] : null;
         if (!file?.path) {
-          wx.showToast({ title: "No file selected", icon: "none" });
+          wx.showToast({
+            title: this.data.language === "zh" ? "未选择文件" : "No file selected",
+            icon: "none",
+          });
           return;
         }
         if (file.size > MAX_FILE_SIZE_BYTES) {
           wx.showToast({
-            title: "File too large (max 50MB)",
+            title: this.data.language === "zh" ? "文件过大，请控制在50MB内" : "File too large (max 50MB)",
             icon: "none",
           });
           return;
@@ -277,7 +295,7 @@ Page({
         const extension = extFromFileName(fileName);
         if (!SUPPORTED_EXTENSIONS.includes(extension)) {
           wx.showToast({
-            title: "Only PDF/TXT/MD supported",
+            title: this.data.language === "zh" ? "仅支持 PDF/TXT/MD" : "Only PDF/TXT/MD supported",
             icon: "none",
           });
           return;
@@ -294,7 +312,7 @@ Page({
       },
       fail: () => {
         wx.showToast({
-          title: "File selection canceled",
+          title: this.data.language === "zh" ? "文件选择已取消" : "File selection canceled",
           icon: "none",
         });
       },
@@ -304,7 +322,10 @@ Page({
   async onStartReview() {
     if (this.data.isReviewing) return;
     if (!this.data.selectedFilePath || !this.data.selectedFileName) {
-      wx.showToast({ title: "Please upload a manuscript first", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "请先上传稿件" : "Please upload a manuscript first",
+        icon: "none",
+      });
       return;
     }
 
@@ -349,7 +370,10 @@ Page({
     } catch (err) {
       await deleteCloudFile(uploadedFileId);
       if (this.handleAuthError(err)) return;
-      const msg = err?.response?.message || err?.errMsg || "Review failed, please try again later";
+      const msg =
+        err?.response?.message ||
+        err?.errMsg ||
+        (this.data.language === "zh" ? "审稿失败，请稍后重试" : "Review failed, please try again later");
       wx.showToast({ title: msg, icon: "none" });
       this.setData({
         isReviewing: false,
@@ -373,7 +397,7 @@ Page({
         },
       });
       const items = Array.isArray(resp?.items)
-        ? resp.items.map(mapRecentSimulation)
+        ? resp.items.map((item) => mapRecentSimulation(item, this.data.language))
         : [];
       this.setData({
         recentItems: items,
@@ -399,7 +423,7 @@ Page({
       selectedFileName: item.fileName || "",
     });
     wx.showToast({
-      title: "Loaded from recent history",
+      title: this.data.language === "zh" ? "已载入历史记录" : "Loaded from recent history",
       icon: "none",
     });
   },
@@ -410,10 +434,13 @@ Page({
 
     const confirm = await new Promise((resolve) => {
       wx.showModal({
-        title: "Delete record",
-        content: "Delete this simulation from recent history?",
-        confirmText: "Delete",
-        cancelText: "Cancel",
+        title: this.data.language === "zh" ? "删除记录" : "Delete record",
+        content:
+          this.data.language === "zh"
+            ? "确认删除这条历史模拟记录吗？"
+            : "Delete this simulation from recent history?",
+        confirmText: this.data.language === "zh" ? "删除" : "Delete",
+        cancelText: this.data.language === "zh" ? "取消" : "Cancel",
         success: (res) => resolve(Boolean(res?.confirm)),
         fail: () => resolve(false),
       });
@@ -431,13 +458,13 @@ Page({
         recentItems: this.data.recentItems.filter((item) => item.id !== recordId),
       });
       wx.showToast({
-        title: "Deleted",
+        title: this.data.language === "zh" ? "已删除" : "Deleted",
         icon: "success",
       });
     } catch (err) {
       if (this.handleAuthError(err)) return;
       wx.showToast({
-        title: "Delete failed",
+        title: this.data.language === "zh" ? "删除失败" : "Delete failed",
         icon: "none",
       });
     }

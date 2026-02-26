@@ -1,4 +1,5 @@
 const { request } = require("../../utils/request");
+const { getCurrentLanguage } = require("../../utils/language");
 
 function getDiffDays(deadline) {
   const ddlTime = new Date(deadline).getTime();
@@ -25,8 +26,20 @@ function normalizeConference(item) {
   };
 }
 
+function buildThemeOptions(language) {
+  const isZh = language === "zh";
+  return [
+    { name: isZh ? "绿色" : "Green", value: "green" },
+    { name: isZh ? "紫色" : "Purple", value: "purple" },
+    { name: isZh ? "黄色" : "Yellow", value: "yellow" },
+    { name: isZh ? "蓝色" : "Blue", value: "blue" },
+    { name: isZh ? "橙色" : "Orange", value: "orange" },
+  ];
+}
+
 Page({
   data: {
+    language: "en",
     featuredConf: null,
     gridConfs: [],
     allConfs: [],
@@ -45,21 +58,28 @@ Page({
       note: "",
       colorTheme: "green",
     },
-    themeOptions: [
-      { name: "Green", value: "green" },
-      { name: "Purple", value: "purple" },
-      { name: "Yellow", value: "yellow" },
-      { name: "Blue", value: "blue" },
-      { name: "Orange", value: "orange" },
-    ],
+    themeOptions: buildThemeOptions("en"),
   },
 
   onLoad() {
+    this.syncLanguage();
     this.fetchConferences();
   },
 
   onShow() {
+    this.syncLanguage();
     this.syncTabBarSelection();
+  },
+
+  syncLanguage() {
+    const language = getCurrentLanguage();
+    this.setData({
+      language,
+      themeOptions: buildThemeOptions(language),
+    });
+    if (Array.isArray(this.data.allConfs) && this.data.allConfs.length) {
+      this.processConferences(this.data.allConfs);
+    }
   },
 
   syncTabBarSelection() {
@@ -101,7 +121,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Load failed",
+          title: this.data.language === "zh" ? "加载失败" : "Load failed",
           icon: "none",
         });
       }
@@ -120,11 +140,12 @@ Page({
         const diffDays = getDiffDays(conf.deadline);
         let timeLeftStr = "";
         if (diffDays <= 0) {
-          timeLeftStr = "Passed";
+          timeLeftStr = this.data.language === "zh" ? "已截止" : "Passed";
         } else if (diffDays <= 60) {
-          timeLeftStr = `${diffDays} Days`;
+          timeLeftStr = this.data.language === "zh" ? `${diffDays} 天` : `${diffDays} Days`;
         } else {
-          timeLeftStr = `${Math.round(diffDays / 30)} Mos`;
+          const months = Math.round(diffDays / 30);
+          timeLeftStr = this.data.language === "zh" ? `${months} 月` : `${months} Mos`;
         }
         return {
           ...conf,
@@ -212,23 +233,44 @@ Page({
       .toLowerCase();
 
     if (!abbr) {
-      wx.showToast({ title: "Enter abbreviation", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "请输入简称" : "Enter abbreviation",
+        icon: "none",
+      });
       return null;
     }
     if (!fullName) {
-      wx.showToast({ title: "Enter full conference name", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "请输入会议全称" : "Enter full conference name",
+        icon: "none",
+      });
       return null;
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) {
-      wx.showToast({ title: "Deadline format should be YYYY-MM-DD", icon: "none" });
+      wx.showToast({
+        title:
+          this.data.language === "zh"
+            ? "截止日期格式应为 YYYY-MM-DD"
+            : "Deadline format should be YYYY-MM-DD",
+        icon: "none",
+      });
       return null;
     }
     if (startDate && !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
-      wx.showToast({ title: "Start date format should be YYYY-MM-DD", icon: "none" });
+      wx.showToast({
+        title:
+          this.data.language === "zh"
+            ? "开始日期格式应为 YYYY-MM-DD"
+            : "Start date format should be YYYY-MM-DD",
+        icon: "none",
+      });
       return null;
     }
     if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
-      wx.showToast({ title: "Progress must be between 0 and 100", icon: "none" });
+      wx.showToast({
+        title: this.data.language === "zh" ? "进度需为 0-100" : "Progress must be between 0 and 100",
+        icon: "none",
+      });
       return null;
     }
 
@@ -274,7 +316,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Save failed",
+          title: this.data.language === "zh" ? "保存失败" : "Save failed",
           icon: "none",
         });
       }
@@ -300,7 +342,7 @@ Page({
     } catch (err) {
       if (!this.handleAuthError(err)) {
         wx.showToast({
-          title: "Delete failed",
+          title: this.data.language === "zh" ? "删除失败" : "Delete failed",
           icon: "none",
         });
       }
