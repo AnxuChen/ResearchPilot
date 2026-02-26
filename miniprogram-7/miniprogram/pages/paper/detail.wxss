@@ -92,7 +92,7 @@ page {
 
   .abstract-flip-card {
     position: relative;
-    min-height: 440rpx;
+    min-height: 640rpx;
     transform-style: preserve-3d;
     transition: transform 560ms cubic-bezier(0.22, 0.61, 0.36, 1);
   }
@@ -112,7 +112,7 @@ page {
     box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.08);
     border: 1rpx solid rgba(0, 0, 0, 0.04);
     box-sizing: border-box;
-    min-height: 440rpx;
+    min-height: 640rpx;
     overflow: hidden;
   }
 
@@ -164,10 +164,12 @@ page {
     min-height: 0;
     overflow-y: auto;
     padding-right: 6rpx;
+    min-height: 300rpx;
   }
 
   .abstract-front-actions {
-    margin-top: 18rpx;
+    margin-top: 14rpx;
+    padding-bottom: 8rpx;
     flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
@@ -175,18 +177,16 @@ page {
 
   .ai-reading-btn {
     margin: 0 !important;
-    min-width: 210rpx;
-    height: 64rpx;
+    min-width: 230rpx;
+    height: 72rpx;
     border-radius: 999rpx;
     background: linear-gradient(135deg, #0ea5e9, #2563eb);
     color: #ffffff;
     font-size: 24rpx;
     font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-    padding: 0 28rpx;
+    line-height: 72rpx;
+    padding: 0 30rpx;
+    text-align: center;
     box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.24);
   }
 
@@ -210,7 +210,7 @@ page {
     color: #374151;
     line-height: 1.7;
     white-space: pre-wrap;
-    max-height: 220rpx;
+    max-height: 420rpx;
     overflow-y: auto;
     margin-top: 8rpx;
   }
