@@ -34,11 +34,6 @@
     </view>
 
     <view class="card-footer">
-      <view class="avatar-group">
-        <view class="avatar bg-blue"><text>A</text></view>
-        <view class="avatar bg-pink"><text>R</text></view>
-        <view class="avatar bg-gray"><text>+4</text></view>
-      </view>
       <button class="btn-launch" bindtap="onLaunchReviewSimulator">
         LAUNCH <text class="arrow">→</text>
       </button>
