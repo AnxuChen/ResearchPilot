@@ -74,6 +74,12 @@ Page({
     isFavoriteSubmitting: false,
     isCommentSubmitting: false,
     hasMarkedRead: false,
+    isAbstractFlipped: false,
+    aiSummaryText: "",
+    aiSummaryLoading: false,
+    aiSummaryError: "",
+    aiSummaryLanguage: "",
+    aiSummaryFallback: false,
   },
 
   onLoad(options) {
@@ -92,6 +98,12 @@ Page({
     this.setData({
       paperId,
       hasMarkedRead: false,
+      isAbstractFlipped: false,
+      aiSummaryText: "",
+      aiSummaryLoading: false,
+      aiSummaryError: "",
+      aiSummaryLanguage: "",
+      aiSummaryFallback: false,
     });
     this.reloadPageData();
   },
@@ -335,6 +347,74 @@ Page({
     } catch (err) {
       this.handleAuthError(err);
     }
+  },
+
+  async fetchAiReadingSummary({ force = false } = {}) {
+    const paperId = this.data.paperId;
+    const language = this.data.language || "en";
+    if (!paperId || this.data.aiSummaryLoading) return;
+
+    const hasCurrentSummary =
+      Boolean(this.data.aiSummaryText) && this.data.aiSummaryLanguage === language;
+    if (!force && hasCurrentSummary) return;
+
+    this.setData({
+      aiSummaryLoading: true,
+      aiSummaryError: "",
+      aiSummaryFallback: false,
+    });
+
+    try {
+      const resp = await request({
+        url: `/papers/${encodeURIComponent(paperId)}/ai-reading`,
+        method: "POST",
+        auth: true,
+        timeout: 45000,
+        data: {
+          language,
+        },
+      });
+      const summaryText = String(resp?.summary || "").trim();
+      if (!summaryText) {
+        throw new Error("empty_ai_summary");
+      }
+      this.setData({
+        aiSummaryText: summaryText,
+        aiSummaryLanguage: language,
+        aiSummaryFallback: Boolean(resp?.meta?.fallback),
+      });
+    } catch (err) {
+      if (this.handleAuthError(err)) return;
+      this.setData({
+        aiSummaryError:
+          this.data.language === "zh"
+            ? "AI 阅读失败，请稍后重试"
+            : "AI reading failed, please retry",
+      });
+    } finally {
+      this.setData({
+        aiSummaryLoading: false,
+      });
+    }
+  },
+
+  onTapAiReading() {
+    if (!this.data.paper) return;
+    if (!this.data.isAbstractFlipped) {
+      this.setData({ isAbstractFlipped: true });
+    }
+    this.fetchAiReadingSummary();
+  },
+
+  onBackToAbstract() {
+    this.setData({ isAbstractFlipped: false });
+  },
+
+  onRetryAiReading() {
+    if (!this.data.isAbstractFlipped) {
+      this.setData({ isAbstractFlipped: true });
+    }
+    this.fetchAiReadingSummary({ force: true });
   },
 
   onCopyLink() {

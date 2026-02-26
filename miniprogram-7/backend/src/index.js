@@ -962,6 +962,145 @@ function normalizeReviewResult(rawResult) {
   };
 }
 
+function normalizeAiReadingSummaryText(value, maxLength = 2200) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const noCodeFence = raw
+    .replace(/^```(?:text|markdown|md)?\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+  return noCodeFence.slice(0, maxLength);
+}
+
+function buildPaperAiReadingFallback(row, language = "en") {
+  const isZh = language === "zh";
+  const title = String(row?.title || "").trim() || (isZh ? "未命名论文" : "Untitled paper");
+  const venue = String(row?.venue || "").trim() || (isZh ? "未知来源" : "Unknown venue");
+  const year = Number.isFinite(row?.year) ? row.year : null;
+  const citationCount = Number.isFinite(row?.citation_count)
+    ? row.citation_count
+    : Number(row?.citation_count || 0);
+  const abstract = String(row?.abstract || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 700);
+
+  if (isZh) {
+    return [
+      `1. 核心观点：该论文《${title}》围绕研究问题提出了解决思路。`,
+      `2. 研究价值：工作发表于 ${venue}${year ? `（${year}）` : ""}，当前引用约 ${citationCount} 次。`,
+      `3. 方法与发现：${abstract || "当前数据未提供足够摘要信息，请阅读原文获取完整细节。"}`
+    ].join("\n");
+  }
+
+  return [
+    `1. Core idea: The paper "${title}" proposes an approach to tackle its target problem.`,
+    `2. Why it matters: It is associated with ${venue}${year ? ` (${year})` : ""} and has about ${citationCount} citations.`,
+    `3. Methods/findings: ${abstract || "Metadata is limited, so please refer to the full paper for complete details."}`
+  ].join("\n");
+}
+
+async function generatePaperAiReadingSummary({ row, language = "en" }) {
+  const normalizedLanguage = normalizePreferredLanguage(language) || "en";
+  const isZh = normalizedLanguage === "zh";
+
+  const title = String(row?.title || "").trim();
+  const authors = Array.isArray(row?.authors)
+    ? row.authors
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 12)
+        .join(", ")
+    : "";
+  const tags = Array.isArray(row?.tags)
+    ? row.tags
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 10)
+        .join(", ")
+    : "";
+  const venue = String(row?.venue || "").trim();
+  const year = Number.isFinite(row?.year) ? row.year : "";
+  const citationCount = Number.isFinite(row?.citation_count)
+    ? row.citation_count
+    : Number(row?.citation_count || 0);
+  const abstract = String(row?.abstract || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 8000);
+  const summaryBg = String(row?.summary_bg || "").trim();
+  const summaryMethod = String(row?.summary_method || "").trim();
+  const summaryContrib = String(row?.summary_contrib || "").trim();
+
+  const completion = await requestLlmCompletion({
+    temperature: 0.2,
+    maxTokens: 760,
+    timeoutMs: 45000,
+    messages: [
+      {
+        role: "system",
+        content: isZh
+          ? "你是资深学术阅读助手。只能基于给定元数据总结，不要编造事实。输出纯文本，不要使用 Markdown 代码块。"
+          : "You are an expert academic reading assistant. Summarize strictly from provided metadata and do not invent facts. Output plain text only.",
+      },
+      {
+        role: "user",
+        content: isZh
+          ? [
+              "请输出简洁的 AI 阅读概要，使用中文，结构为 3 行：",
+              "1. 核心观点",
+              "2. 研究价值",
+              "3. 方法与发现",
+              "每行控制在 1-2 句，总长度不超过 320 字。",
+              "",
+              `标题: ${title || "未知"}`,
+              `作者: ${authors || "未知"}`,
+              `年份: ${year || "未知"}`,
+              `发表来源: ${venue || "未知"}`,
+              `引用数: ${citationCount}`,
+              `主题标签: ${tags || "未知"}`,
+              `摘要: ${abstract || "未知"}`,
+              `背景摘要(可选): ${summaryBg || "无"}`,
+              `方法摘要(可选): ${summaryMethod || "无"}`,
+              `贡献摘要(可选): ${summaryContrib || "无"}`,
+            ].join("\n")
+          : [
+              "Return a concise AI reading note in English with exactly 3 lines:",
+              "1. Core idea",
+              "2. Why it matters",
+              "3. Methods and findings",
+              "Each line should be 1-2 sentences. Keep total length under 220 words.",
+              "",
+              `Title: ${title || "Unknown"}`,
+              `Authors: ${authors || "Unknown"}`,
+              `Year: ${year || "Unknown"}`,
+              `Venue: ${venue || "Unknown"}`,
+              `Citation count: ${citationCount}`,
+              `Tags: ${tags || "Unknown"}`,
+              `Abstract: ${abstract || "Unknown"}`,
+              `Background summary (optional): ${summaryBg || "N/A"}`,
+              `Method summary (optional): ${summaryMethod || "N/A"}`,
+              `Contribution summary (optional): ${summaryContrib || "N/A"}`,
+            ].join("\n"),
+      },
+    ],
+  });
+
+  const summary = normalizeAiReadingSummaryText(completion.content);
+  if (!summary) {
+    throw createHttpError(502, "llm_response_invalid");
+  }
+
+  return {
+    summary,
+    llmMeta: {
+      model: completion.model,
+      endpoint: completion.endpoint,
+      attemptedModels: completion.attemptedModels || [],
+    },
+  };
+}
+
 function purgeExpiredReviewTasks() {
   const now = Date.now();
   for (const [taskId, task] of reviewTasks.entries()) {
@@ -3494,6 +3633,110 @@ app.get("/papers/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       message: "paper_detail_failed",
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.post("/papers/:id/ai-reading", authMiddleware, async (req, res) => {
+  try {
+    const paperId = String(req.params.id || "").trim();
+    if (!paperId) {
+      return res.status(400).json({ message: "invalid_paper_id" });
+    }
+
+    const preferredLanguage = normalizePreferredLanguage(req.body?.language || req.query?.language) || "en";
+
+    const result = await pool.query(
+      `
+        SELECT
+          p.id,
+          p.arxiv_id,
+          p.title,
+          p.authors,
+          p.abstract,
+          p.published_at,
+          p.tags,
+          ps.summary_bg,
+          ps.summary_method,
+          ps.summary_contrib,
+          ps.model_name
+        FROM papers p
+        LEFT JOIN paper_summaries ps
+          ON ps.paper_id = p.id
+        WHERE p.id = $1
+        LIMIT 1;
+      `,
+      [paperId]
+    );
+    const row = result.rows[0];
+    if (!row) {
+      return res.status(404).json({ message: "paper_not_found" });
+    }
+
+    const isOpenAlexPaper = String(paperId).startsWith("oa:");
+    const openAlexWorkIdFromArxiv = String(row.arxiv_id || "")
+      .replace(/^openalex:/i, "")
+      .trim();
+    const openAlexWorkId = isOpenAlexPaper
+      ? String(paperId).slice(3)
+      : normalizeOpenAlexWorkId(openAlexWorkIdFromArxiv);
+
+    let detailData = null;
+    try {
+      if (openAlexWorkId) {
+        detailData = await fetchOpenAlexPaperByWorkId(openAlexWorkId);
+      }
+    } catch {
+      detailData = null;
+    }
+
+    const aiInputRow = {
+      ...row,
+      venue: detailData?.primary_location?.source?.display_name || null,
+      year: Number.isFinite(detailData?.publication_year)
+        ? detailData.publication_year
+        : null,
+      citation_count: Number.isFinite(detailData?.cited_by_count)
+        ? detailData.cited_by_count
+        : 0,
+    };
+
+    try {
+      const generated = await generatePaperAiReadingSummary({
+        row: aiInputRow,
+        language: preferredLanguage,
+      });
+      return res.status(200).json({
+        paperId,
+        language: preferredLanguage,
+        summary: generated.summary,
+        meta: {
+          source: "llm",
+          fallback: false,
+          model: generated.llmMeta?.model || null,
+          endpoint: generated.llmMeta?.endpoint || buildLlmChatCompletionsUrl(llmBaseUrl),
+          attemptedModels: generated.llmMeta?.attemptedModels || [],
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    } catch (llmErr) {
+      const fallbackSummary = buildPaperAiReadingFallback(aiInputRow, preferredLanguage);
+      return res.status(200).json({
+        paperId,
+        language: preferredLanguage,
+        summary: fallbackSummary,
+        meta: {
+          source: "fallback",
+          fallback: true,
+          reason: llmErr?.publicMessage || String(llmErr?.message || "llm_failed"),
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      message: "paper_ai_reading_failed",
       detail: String(err?.message || err),
     });
   }

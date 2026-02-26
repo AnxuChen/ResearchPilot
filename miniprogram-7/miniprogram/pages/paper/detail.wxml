@@ -22,10 +22,54 @@
       </view>
     </view>
 
-    <view class="abstract-card">
-      <view class="quote-icon">"</view>
-      <view class="card-label">{{language === 'zh' ? '摘要' : 'Abstract'}}</view>
-      <view class="abstract-text">{{paper.abstract}}</view>
+    <view class="abstract-flip-scene">
+      <view class="abstract-flip-card {{isAbstractFlipped ? 'is-flipped' : ''}}">
+        <view class="abstract-card abstract-face abstract-front">
+          <view class="quote-icon">"</view>
+          <view class="card-label">{{language === 'zh' ? '摘要' : 'Abstract'}}</view>
+          <view class="abstract-text">{{paper.abstract}}</view>
+          <view class="abstract-front-actions">
+            <button
+              class="ai-reading-btn"
+              bindtap="onTapAiReading"
+              loading="{{aiSummaryLoading}}"
+              disabled="{{aiSummaryLoading}}"
+            >
+              AI Reading
+            </button>
+          </view>
+        </view>
+
+        <view class="abstract-card abstract-face abstract-back">
+          <view class="quote-icon">AI</view>
+          <view class="card-label">AI Reading</view>
+
+          <view wx:if="{{aiSummaryLoading}}" class="ai-summary-state">
+            {{language === 'zh' ? 'AI 正在阅读中...' : 'AI is reading...'}}
+          </view>
+          <view wx:elif="{{aiSummaryError}}" class="ai-summary-state ai-summary-error">
+            {{aiSummaryError}}
+          </view>
+          <view wx:else class="ai-summary-text">{{aiSummaryText}}</view>
+
+          <view class="abstract-back-actions">
+            <button
+              wx:if="{{aiSummaryError}}"
+              class="ai-back-btn ai-retry-btn"
+              bindtap="onRetryAiReading"
+            >
+              {{language === 'zh' ? '重试' : 'Retry'}}
+            </button>
+            <button class="ai-back-btn" bindtap="onBackToAbstract">
+              {{language === 'zh' ? '返回摘要' : 'Back to Abstract'}}
+            </button>
+          </view>
+
+          <view wx:if="{{aiSummaryFallback && !aiSummaryLoading && !aiSummaryError}}" class="ai-summary-tip">
+            {{language === 'zh' ? '当前展示快速回退摘要。' : 'Showing fallback summary for now.'}}
+          </view>
+        </view>
+      </view>
     </view>
 
     <view class="section-header">

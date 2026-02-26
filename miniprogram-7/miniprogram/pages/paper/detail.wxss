@@ -84,16 +84,56 @@ page {
   }
   
   /* --- 3. 卡片设计 --- */
+  .abstract-flip-scene {
+    position: relative;
+    margin-bottom: 50rpx;
+    perspective: 1400rpx;
+  }
+
+  .abstract-flip-card {
+    position: relative;
+    min-height: 440rpx;
+    transform-style: preserve-3d;
+    transition: transform 560ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .abstract-flip-card.is-flipped {
+    transform: rotateY(180deg);
+  }
+
   .abstract-card {
     border-radius: 44rpx;
     padding: 40rpx;
     box-shadow: 0 15rpx 35rpx rgba(0, 0, 0, 0.04);
-    margin-bottom: 50rpx;
+    margin-bottom: 0;
     /* 更明显的卡片背景 */
     background: linear-gradient(145deg, #ffffff, #f7f9ff);
     /* 增强阴影对比 */
     box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.08);
     border: 1rpx solid rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+    min-height: 440rpx;
+    overflow: hidden;
+  }
+
+  .abstract-face {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+
+  .abstract-front {
+    transform: rotateY(0deg);
+  }
+
+  .abstract-back {
+    transform: rotateY(180deg);
   }
   
   .quote-icon {
@@ -120,6 +160,94 @@ page {
     font-size: 25rpx;
     color: #4b5563;
     line-height: 1.7;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6rpx;
+  }
+
+  .abstract-front-actions {
+    margin-top: 18rpx;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .ai-reading-btn {
+    margin: 0 !important;
+    min-width: 210rpx;
+    height: 64rpx;
+    border-radius: 999rpx;
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    color: #ffffff;
+    font-size: 24rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0 28rpx;
+    box-shadow: 0 10rpx 24rpx rgba(37, 99, 235, 0.24);
+  }
+
+  .ai-reading-btn::after {
+    border: none;
+  }
+
+  .ai-summary-state {
+    font-size: 24rpx;
+    color: #4b5563;
+    line-height: 1.6;
+    margin-top: 8rpx;
+  }
+
+  .ai-summary-error {
+    color: #b91c1c;
+  }
+
+  .ai-summary-text {
+    font-size: 24rpx;
+    color: #374151;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    max-height: 220rpx;
+    overflow-y: auto;
+    margin-top: 8rpx;
+  }
+
+  .abstract-back-actions {
+    margin-top: auto;
+    padding-top: 24rpx;
+    display: flex;
+    justify-content: flex-end;
+    gap: 14rpx;
+  }
+
+  .ai-back-btn {
+    margin: 0 !important;
+    height: 58rpx;
+    border-radius: 999rpx;
+    padding: 0 24rpx;
+    background: #e5e7eb;
+    color: #1f2937;
+    font-size: 22rpx;
+    font-weight: 700;
+    line-height: 58rpx;
+  }
+
+  .ai-back-btn::after {
+    border: none;
+  }
+
+  .ai-retry-btn {
+    background: #dbeafe;
+    color: #1d4ed8;
+  }
+
+  .ai-summary-tip {
+    margin-top: 14rpx;
+    font-size: 20rpx;
+    color: #6b7280;
   }
   
   .section-header {
