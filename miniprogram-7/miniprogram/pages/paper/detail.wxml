@@ -159,7 +159,6 @@
 <view class="bottom-input-bar">
   <view class="action-buttons">
     <button class="action-btn btn-light" bindtap="onCopyLink">{{language === 'zh' ? '复制链接' : 'Copy Link'}}</button>
-    <button class="action-btn btn-dark" bindtap="onOpenLink">{{language === 'zh' ? '打开提示' : 'Open Hint'}}</button>
   </view>
 
   <view class="input-row">

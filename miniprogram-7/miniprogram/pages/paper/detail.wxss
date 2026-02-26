@@ -314,11 +314,6 @@ page {
     color: #374151;
   }
   
-  .btn-dark {
-    background: #1e40af;
-    color: white;
-  }
-  
   .footer-spacer {
     height: 60rpx;
   }

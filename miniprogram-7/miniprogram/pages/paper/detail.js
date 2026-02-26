@@ -436,28 +436,4 @@ Page({
       },
     });
   },
-
-  onOpenLink() {
-    const link = this.data.paper && this.data.paper.link ? this.data.paper.link : "";
-    if (!link) {
-      wx.showToast({
-        title: this.data.language === "zh" ? "暂无可打开链接" : "No link available",
-        icon: "none",
-      });
-      return;
-    }
-    wx.setClipboardData({
-      data: link,
-      success: () => {
-        wx.showModal({
-          title: this.data.language === "zh" ? "链接已复制" : "Link copied",
-          content:
-            this.data.language === "zh"
-              ? "论文链接已复制，你可以在浏览器中打开。"
-              : "Paper link copied. You can open it in your browser.",
-          showCancel: false,
-        });
-      },
-    });
-  },
 });
