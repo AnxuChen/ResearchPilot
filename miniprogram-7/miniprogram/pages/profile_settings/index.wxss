@@ -1,0 +1,202 @@
+page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eafaf7, #fff7ed, #fdf2f8);
+}
+
+.page {
+  min-height: 100vh;
+  padding: 80rpx 40rpx;
+  box-sizing: border-box;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 30rpx;
+  padding: 36rpx;
+  box-shadow: 0 20rpx 45rpx rgba(0, 0, 0, 0.08);
+}
+
+.title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.desc {
+  margin-top: 14rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+  line-height: 1.6;
+  display: block;
+}
+
+.avatar-btn {
+  margin-top: 28rpx;
+  height: 100rpx;
+  border-radius: 20rpx;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+}
+
+.avatar-img {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  margin-right: 14rpx;
+}
+
+.avatar-text {
+  font-size: 26rpx;
+  color: #111827;
+}
+
+.nickname-input {
+  margin-top: 18rpx;
+  height: 88rpx;
+  border-radius: 18rpx;
+  background: #f8fafc;
+  padding: 0 20rpx;
+  box-sizing: border-box;
+  font-size: 26rpx;
+}
+
+.badge-section {
+  margin-top: 18rpx;
+  background: #f8fafc;
+  border-radius: 18rpx;
+  padding: 18rpx;
+}
+
+.badge-section-title {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.badge-section-desc {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #6b7280;
+  line-height: 1.5;
+  display: block;
+}
+
+.badge-current {
+  margin-top: 14rpx;
+  border-radius: 28rpx;
+  padding: 10rpx 16rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8rpx 18rpx rgba(0, 0, 0, 0.12);
+}
+
+.badge-current-icon {
+  font-size: 24rpx;
+}
+
+.badge-current-text {
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.badge-grid {
+  margin-top: 14rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.badge-option {
+  border-radius: 20rpx;
+  border: 2rpx solid transparent;
+  padding: 4rpx;
+}
+
+.badge-option-selected {
+  border-color: #14b8a6;
+  box-shadow: 0 4rpx 12rpx rgba(20, 184, 166, 0.2);
+}
+
+.badge-option-chip {
+  border-radius: 20rpx;
+  padding: 8rpx 12rpx;
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.75);
+}
+
+.badge-option-icon {
+  font-size: 20rpx;
+}
+
+.badge-option-text {
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.badge-input {
+  margin-top: 12rpx;
+  height: 76rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  padding: 0 16rpx;
+  box-sizing: border-box;
+  font-size: 24rpx;
+}
+
+.badge-style-night-owl {
+  background: linear-gradient(135deg, #312e81 0%, #6d28d9 100%);
+  color: #ffffff;
+}
+
+.badge-style-sunrise-scholar {
+  background: linear-gradient(135deg, #f97316 0%, #facc15 100%);
+  color: #1f2937;
+}
+
+.badge-style-deep-focus {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  color: #ffffff;
+}
+
+.badge-style-citation-ninja {
+  background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  color: #ffffff;
+}
+
+.badge-style-data-wizard {
+  background: linear-gradient(135deg, #2563eb 0%, #22d3ee 100%);
+  color: #ffffff;
+}
+
+.badge-style-peer-reviewer {
+  background: linear-gradient(135deg, #334155 0%, #475569 100%);
+  color: #ffffff;
+}
+
+.save-btn {
+  margin-top: 22rpx;
+  height: 92rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #2dd4bf, #f472b6);
+  color: #ffffff;
+  font-size: 28rpx;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.save-btn::after {
+  border: none;
+}

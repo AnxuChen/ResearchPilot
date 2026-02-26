@@ -12,7 +12,8 @@
     "pages/explore_Card/index",
     "pages/paper/detail",
     "pages/projects/index",
-    "pages/profile/index"
+    "pages/profile/index",
+    "pages/profile_settings/index"
   ],
   "tabBar": {
     "custom": true,

@@ -2,7 +2,7 @@
 <view class="container">
 
   <view class="header-nav">
-    <view class="circle-btn">
+    <view class="circle-btn" bindtap="onOpenSettings">
         <image class="icon-img" src="/images/profile/set.png" mode="aspectFit"></image> 
     </view>
   </view>
@@ -12,9 +12,9 @@
       <view class="avatar-ring">
         <image class="avatar-img" src="{{avatarUrl}}" mode="aspectFill"></image>
       </view>
-      <view class="badge-night">
-        <text class="badge-icon">🌙</text>
-        <text class="badge-text">Night Owl</text>
+      <view class="badge-night {{badgeClassName}}">
+        <text class="badge-icon">{{badgeIcon}}</text>
+        <text class="badge-text">{{badgeText}}</text>
       </view>
     </view>
     <text class="user-name">{{userName}}</text>

@@ -70,21 +70,51 @@ page {
     position: absolute;
     bottom: -10rpx;
     right: -20rpx;
-    background: #2E1065;
     color: #fff;
     padding: 10rpx 20rpx;
     border-radius: 30rpx;
     display: flex;
     align-items: center;
     gap: 8rpx;
+    max-width: 260rpx;
     border: 4rpx solid #fff;
     transform: rotate(3deg);
     box-shadow: 0 10rpx 20rpx rgba(0,0,0,0.2);
+  }
+
+  .badge-style-night-owl {
+    background: linear-gradient(135deg, #312e81 0%, #6d28d9 100%);
+  }
+
+  .badge-style-sunrise-scholar {
+    background: linear-gradient(135deg, #f97316 0%, #facc15 100%);
+    color: #1f2937;
+  }
+
+  .badge-style-deep-focus {
+    background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  }
+
+  .badge-style-citation-ninja {
+    background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  }
+
+  .badge-style-data-wizard {
+    background: linear-gradient(135deg, #2563eb 0%, #22d3ee 100%);
+  }
+
+  .badge-style-peer-reviewer {
+    background: linear-gradient(135deg, #334155 0%, #475569 100%);
   }
   
   .badge-text {
     font-size: 20rpx;
     font-weight: bold;
+    display: block;
+    max-width: 180rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .user-name {

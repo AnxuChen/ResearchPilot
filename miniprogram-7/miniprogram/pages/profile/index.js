@@ -1,6 +1,33 @@
 // pages/profile/index.js
 const { request } = require("../../utils/request");
 const COLLECTED_ICON_CLASSES = ["bg-indigo-gradient", "bg-teal-gradient", "bg-pink-gradient"];
+const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
+const DEFAULT_BADGE = {
+  key: "night_owl",
+  text: "Night Owl",
+  icon: "🌙",
+  className: "badge-style-night-owl",
+};
+const BADGE_META_MAP = {
+  night_owl: { icon: "🌙", className: "badge-style-night-owl", fallbackText: "Night Owl" },
+  sunrise_scholar: {
+    icon: "🌅",
+    className: "badge-style-sunrise-scholar",
+    fallbackText: "Sunrise Scholar",
+  },
+  deep_focus: { icon: "🧠", className: "badge-style-deep-focus", fallbackText: "Deep Focus" },
+  citation_ninja: {
+    icon: "📚",
+    className: "badge-style-citation-ninja",
+    fallbackText: "Citation Ninja",
+  },
+  data_wizard: { icon: "📊", className: "badge-style-data-wizard", fallbackText: "Data Wizard" },
+  peer_reviewer: {
+    icon: "🧪",
+    className: "badge-style-peer-reviewer",
+    fallbackText: "Peer Reviewer",
+  },
+};
 
 function buildDisplayName(user) {
   const nickname = (user && user.nickname ? String(user.nickname).trim() : "") || "";
@@ -46,11 +73,49 @@ function normalizeCollectedPaper(item, index) {
   };
 }
 
+function getBadgePrefsMap() {
+  const raw = wx.getStorageSync(BADGE_PREF_STORAGE_KEY);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw;
+}
+
+function getUserBadgePreference(userId) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const prefs = getBadgePrefsMap();
+  const value = prefs[id];
+  if (!value || typeof value !== "object") return null;
+  const key = String(value.key || "").trim();
+  const text = String(value.text || "").trim();
+  if (!key && !text) return null;
+  return { key, text };
+}
+
+function resolveBadgeDisplay(userId) {
+  const pref = getUserBadgePreference(userId);
+  const key = pref?.key && BADGE_META_MAP[pref.key] ? pref.key : DEFAULT_BADGE.key;
+  const meta = BADGE_META_MAP[key] || BADGE_META_MAP[DEFAULT_BADGE.key];
+  const text =
+    pref?.text && String(pref.text).trim()
+      ? String(pref.text).trim().slice(0, 24)
+      : meta.fallbackText || DEFAULT_BADGE.text;
+  return {
+    badgeKey: key,
+    badgeText: text,
+    badgeIcon: meta.icon,
+    badgeClassName: meta.className,
+  };
+}
+
 Page({
   data: {
     userName: "User",
     userBio: "Design-minded academic explorer",
     avatarUrl: "/images/profile/user.png",
+    badgeKey: DEFAULT_BADGE.key,
+    badgeText: DEFAULT_BADGE.text,
+    badgeIcon: DEFAULT_BADGE.icon,
+    badgeClassName: DEFAULT_BADGE.className,
     collectedPapers: [],
     collectedLoading: false,
     collectedError: "",
@@ -110,6 +175,7 @@ Page({
         userName: buildDisplayName(user),
         userBio: buildBio(user),
         avatarUrl: user.avatarUrl || "/images/profile/user.png",
+        ...resolveBadgeDisplay(user.id),
       });
       wx.setStorageSync("user", user || {});
     } catch (err) {
@@ -122,6 +188,7 @@ Page({
         userName: buildDisplayName(cachedUser),
         userBio: buildBio(cachedUser),
         avatarUrl: cachedUser.avatarUrl || "/images/profile/user.png",
+        ...resolveBadgeDisplay(cachedUser.id),
       });
     }
   },
@@ -163,6 +230,12 @@ Page({
       fail: (err) => {
         console.error("跳转论文详情失败", err);
       },
+    });
+  },
+
+  onOpenSettings() {
+    wx.navigateTo({
+      url: "/pages/profile_settings/index",
     });
   },
 });
