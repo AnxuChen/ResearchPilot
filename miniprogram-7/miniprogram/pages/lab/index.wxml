@@ -2,14 +2,14 @@
 <view class="container">
   <view class="header-wrapper">
     <view class="left-column">
-      <view class="brand">
+      <view class="brand {{language === 'zh' ? 'brand-zh' : ''}}">
         <view class="logo-box">
           <image class="icon-img" src="/images/lab/lab.png" mode="aspectFit"></image> 
         </view>
         <text class="brand-name">AI LAB</text>
       </view>
 
-      <view class="title-section">
+      <view class="title-section {{language === 'zh' ? 'title-section-zh' : ''}}">
         <view class="title-main">{{language === 'zh' ? '选择' : 'Select'}}</view>
         <view class="title-gradient">{{language === 'zh' ? '研究工具' : 'Research Tool'}}</view>
       </view>

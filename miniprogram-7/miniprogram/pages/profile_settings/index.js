@@ -2,6 +2,7 @@ const { request } = require("../../utils/request");
 
 const DEFAULT_AVATAR = "/images/profile/user.png";
 const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
+const PROFILE_PREF_STORAGE_KEY = "profile_local_preferences_v1";
 const { getCurrentLanguage, setCurrentLanguage } = require("../../utils/language");
 const LANGUAGE_OPTIONS = [
   { value: "en", labelEn: "English", labelZh: "英文" },
@@ -86,6 +87,33 @@ function saveUserBadgePref(userId, payload) {
   wx.setStorageSync(BADGE_PREF_STORAGE_KEY, map);
 }
 
+function getProfilePrefsMap() {
+  const raw = wx.getStorageSync(PROFILE_PREF_STORAGE_KEY);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw;
+}
+
+function getUserProfilePref(userId) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const map = getProfilePrefsMap();
+  const pref = map[id];
+  if (!pref || typeof pref !== "object") return null;
+  return {
+    nickname: String(pref.nickname || "").trim().slice(0, 40),
+  };
+}
+
+function saveUserProfilePref(userId, payload) {
+  const id = String(userId || "").trim();
+  if (!id) return;
+  const map = getProfilePrefsMap();
+  map[id] = {
+    nickname: String(payload?.nickname || "").trim().slice(0, 40),
+  };
+  wx.setStorageSync(PROFILE_PREF_STORAGE_KEY, map);
+}
+
 Page({
   data: {
     userId: "",
@@ -106,6 +134,7 @@ Page({
 
   onLoad() {
     this.syncLanguage();
+    this.hydrateFromLocalCache();
     this.bootstrap();
   },
 
@@ -133,6 +162,42 @@ Page({
     return false;
   },
 
+  resolveUserId() {
+    const currentId = String(this.data.userId || "").trim();
+    if (currentId) return currentId;
+    const cachedUser = wx.getStorageSync("user") || {};
+    const cachedId = String(cachedUser.id || "").trim();
+    if (cachedId) {
+      this.setData({ userId: cachedId });
+    }
+    return cachedId;
+  },
+
+  hydrateFromLocalCache() {
+    const cachedUser = wx.getStorageSync("user") || {};
+    const userId = String(cachedUser.id || "").trim();
+    const cachedNickname =
+      typeof cachedUser.nickname === "string" ? cachedUser.nickname.trim() : "";
+    const cachedAvatar = typeof cachedUser.avatarUrl === "string" ? cachedUser.avatarUrl.trim() : "";
+    const localProfilePref = getUserProfilePref(userId);
+    const localBadgePref = getUserBadgePref(userId);
+    const badgeOption = getBadgeOptionByKey(localBadgePref?.key);
+    const badgeText = localBadgePref?.text || badgeOption.previewText;
+    const nickname = localProfilePref?.nickname || cachedNickname;
+
+    this.setData({
+      userId: userId || this.data.userId,
+      nickname: nickname || this.data.nickname,
+      displayAvatarUrl: cachedAvatar || this.data.displayAvatarUrl || DEFAULT_AVATAR,
+      originalAvatarUrl: cachedAvatar || this.data.originalAvatarUrl || "",
+      selectedBadgeKey: badgeOption.key,
+      selectedBadgeIcon: badgeOption.icon,
+      selectedBadgeClass: badgeOption.className,
+      selectedBadgeFallbackText: badgeOption.previewText,
+      badgeText: badgeText || this.data.badgeText,
+    });
+  },
+
   async bootstrap() {
     const token = wx.getStorageSync("token");
     if (!token) {
@@ -148,8 +213,10 @@ Page({
       });
 
       const userId = String(user?.id || "").trim();
-      const nickname = user?.nickname ? String(user.nickname).trim() : "";
+      const serverNickname = user?.nickname ? String(user.nickname).trim() : "";
       const avatarUrl = user?.avatarUrl ? String(user.avatarUrl).trim() : "";
+      const localProfilePref = getUserProfilePref(userId);
+      const nickname = localProfilePref?.nickname || serverNickname;
       const pref = getUserBadgePref(userId);
       const option = getBadgeOptionByKey(pref?.key);
       const badgeText = pref?.text || option.previewText;
@@ -168,8 +235,13 @@ Page({
         badgeText,
         selectedLanguage,
       });
+      if (userId) {
+        saveUserProfilePref(userId, { nickname });
+        saveUserBadgePref(userId, { key: option.key, text: badgeText });
+      }
     } catch (err) {
       if (this.handleAuthError(err)) return;
+      this.hydrateFromLocalCache();
       wx.showToast({
         title: this.data.selectedLanguage === "zh" ? "读取资料失败" : "Failed to load profile",
         icon: "none",
@@ -189,9 +261,14 @@ Page({
   },
 
   onInputNickname(e) {
+    const nickname = String(e.detail.value || "");
     this.setData({
-      nickname: e.detail.value || "",
+      nickname,
     });
+    const userId = this.resolveUserId();
+    if (userId) {
+      saveUserProfilePref(userId, { nickname });
+    }
   },
 
   onSelectBadgeStyle(e) {
@@ -205,12 +282,27 @@ Page({
       selectedBadgeFallbackText: option.previewText,
       badgeText: currentText || option.previewText,
     });
+    const userId = this.resolveUserId();
+    if (userId) {
+      saveUserBadgePref(userId, {
+        key: option.key,
+        text: currentText || option.previewText,
+      });
+    }
   },
 
   onInputBadgeText(e) {
+    const badgeText = String(e.detail.value || "").slice(0, 24);
     this.setData({
-      badgeText: String(e.detail.value || "").slice(0, 24),
+      badgeText,
     });
+    const userId = this.resolveUserId();
+    if (userId) {
+      saveUserBadgePref(userId, {
+        key: this.data.selectedBadgeKey,
+        text: badgeText,
+      });
+    }
   },
 
   onChooseAvatar(e) {
@@ -269,25 +361,42 @@ Page({
 
     this.setData({ isSaving: true });
     try {
+      const userId = this.resolveUserId();
+      if (userId) {
+        saveUserProfilePref(userId, { nickname });
+      }
       const resp = await request({
         url: "/users/me/profile",
         method: "PUT",
         auth: true,
         data: {
           nickname,
+          fullName: nickname,
           avatarUrl:
             String(this.data.pendingAvatarDataUrl || "").trim() ||
             String(this.data.originalAvatarUrl || "").trim() ||
             undefined,
         },
       });
-      const user = resp?.user || {};
-      if (user && typeof user === "object") {
-        wx.setStorageSync("user", user);
-      }
+      const serverUser = resp?.user && typeof resp.user === "object" ? resp.user : {};
+      const cachedUser = wx.getStorageSync("user") || {};
+      const resolvedUser = {
+        ...cachedUser,
+        ...serverUser,
+        id: serverUser.id || userId || cachedUser.id,
+        nickname,
+        fullName: nickname,
+        avatarUrl:
+          String(this.data.pendingAvatarDataUrl || "").trim() ||
+          String(this.data.originalAvatarUrl || "").trim() ||
+          serverUser.avatarUrl ||
+          cachedUser.avatarUrl ||
+          "",
+      };
+      wx.setStorageSync("user", resolvedUser);
       const badgeText =
         String(this.data.badgeText || "").trim() || this.data.selectedBadgeFallbackText;
-      saveUserBadgePref(user.id || this.data.userId, {
+      saveUserBadgePref(resolvedUser.id || userId, {
         key: this.data.selectedBadgeKey,
         text: badgeText,
       });

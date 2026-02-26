@@ -3,6 +3,7 @@ const { request } = require("../../utils/request");
 const { getCurrentLanguage } = require("../../utils/language");
 const COLLECTED_ICON_CLASSES = ["bg-indigo-gradient", "bg-teal-gradient", "bg-pink-gradient"];
 const BADGE_PREF_STORAGE_KEY = "profile_badge_preferences_v1";
+const PROFILE_PREF_STORAGE_KEY = "profile_local_preferences_v1";
 const DEFAULT_BADGE = {
   key: "night_owl",
   text: "Night Owl",
@@ -108,6 +109,33 @@ function resolveBadgeDisplay(userId) {
   };
 }
 
+function getProfilePrefsMap() {
+  const raw = wx.getStorageSync(PROFILE_PREF_STORAGE_KEY);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  return raw;
+}
+
+function getUserProfilePreference(userId) {
+  const id = String(userId || "").trim();
+  if (!id) return null;
+  const prefs = getProfilePrefsMap();
+  const value = prefs[id];
+  if (!value || typeof value !== "object") return null;
+  const nickname = String(value.nickname || "").trim().slice(0, 40);
+  if (!nickname) return null;
+  return { nickname };
+}
+
+function mergeUserWithLocalPreference(user) {
+  const userObj = user && typeof user === "object" ? user : {};
+  const pref = getUserProfilePreference(userObj.id);
+  if (!pref) return userObj;
+  return {
+    ...userObj,
+    nickname: pref.nickname,
+  };
+}
+
 Page({
   data: {
     language: "en",
@@ -179,19 +207,20 @@ Page({
         method: "GET",
         auth: true,
       });
+      const resolvedUser = mergeUserWithLocalPreference(user);
       this.setData({
-        userName: buildDisplayName(user),
-        userBio: buildBio(user, this.data.language),
-        avatarUrl: user.avatarUrl || "/images/profile/user.png",
-        ...resolveBadgeDisplay(user.id),
+        userName: buildDisplayName(resolvedUser),
+        userBio: buildBio(resolvedUser, this.data.language),
+        avatarUrl: resolvedUser.avatarUrl || "/images/profile/user.png",
+        ...resolveBadgeDisplay(resolvedUser.id),
       });
-      wx.setStorageSync("user", user || {});
+      wx.setStorageSync("user", resolvedUser || {});
     } catch (err) {
       if (this.handleAuthError(err)) {
         return;
       }
 
-      const cachedUser = wx.getStorageSync("user") || {};
+      const cachedUser = mergeUserWithLocalPreference(wx.getStorageSync("user") || {});
       this.setData({
         userName: buildDisplayName(cachedUser),
         userBio: buildBio(cachedUser, this.data.language),

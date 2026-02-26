@@ -19,7 +19,7 @@ page {
     align-items: flex-start; /* 关键：让两侧顶端对齐 */
     margin-bottom: 30px;
     padding-top: 10px;
-    margin-left: -80px;   /* 向左移动 */
+    margin-left: -80px;
   }
   
   .left-column {
@@ -27,11 +27,15 @@ page {
     flex-direction: column; /* 让 Logo 和 标题 垂直排列 */
     gap: 16px; /* 控制 Logo 和下面标题之间的间距 */
   }
-  
+
   .brand {
     display: flex;
     align-items: center;
     gap: 8px;
+  }
+
+  .brand-zh {
+    margin-left: -18rpx;
   }
   
   /* 右侧按钮对齐处理 */
@@ -94,6 +98,10 @@ page {
   /* 标题区域 */
   .title-section {
     margin-bottom: 5px;
+  }
+
+  .title-section-zh {
+    margin-left: -18rpx;
   }
   
   .title-main {
