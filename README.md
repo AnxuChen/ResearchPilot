@@ -3,7 +3,7 @@
 面向科研场景的微信小程序产品：把文献探索、论文阅读、AI 学术工具、投稿管理放到一个工作流里。
 
 <p align="center">
-  <img src="docs/img/logo.png" alt="Research Pilot Logo" width="140" style="border-radius: 16px;" />
+  <img src="docs/img/logo-rounded.png" alt="Research Pilot Logo" width="140" />
 </p>
 
 ## 为什么做这个产品
@@ -119,21 +119,8 @@ curl http://127.0.0.1:8081/healthz
 
 详细接口见：`docs/后端联调接口说明.md`
 
-## 已知限制
-
-1. DataViz / Review Simulator 的任务状态当前以内存存储，容器重启后任务状态会丢失。
-2. Citations 依赖外部 LLM，模型慢响应时可能出现前端超时体验。
-3. 后端目前为单体入口文件，后续会逐步模块化拆分。
-
 ## 文档与 Wiki
 
 - 架构说明：`docs/后端技术架构规划.md`
 - AnyService 报告：`docs/CloudBase-AnyService-wiki.md`
 - Wiki 草稿目录：`docs/wiki/`
-
-## Roadmap
-
-1. 异步任务持久化（DB/队列）。
-2. 后端模块化拆分（auth/papers/lab/projects/profile）。
-3. 接口测试与回归测试补齐。
-4. 运行监控与错误告警完善。
