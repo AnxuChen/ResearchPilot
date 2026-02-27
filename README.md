@@ -6,6 +6,14 @@
   <img src="docs/img/logo-rounded.png" alt="Research Pilot Logo" width="140" />
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/Build-Ready-2ea44f?style=for-the-badge" alt="Build Ready" />
+  <img src="https://img.shields.io/badge/Release-v2026.2.27-0ea5e9?style=for-the-badge" alt="Release v2026.2.27" />
+  <img src="https://img.shields.io/badge/WeChat-Mini%20Program-07c160?style=for-the-badge" alt="WeChat Mini Program" />
+  <img src="https://img.shields.io/badge/API-Node.js%2020-3c873a?style=for-the-badge" alt="API Node.js 20" />
+  <img src="https://img.shields.io/badge/License-MIT-0284c7?style=for-the-badge" alt="MIT License" />
+</p>
+
 ## 为什么做这个产品
 
 Research Pilot 聚焦研究生和科研初学者的高频动作：

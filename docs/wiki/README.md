@@ -7,6 +7,7 @@
 1. 在主仓库内维护本目录内容。
 2. 发布时同步到 `<repo>.wiki.git`。
 3. 由 `Home.md` 作为 Wiki 首页，`_Sidebar.md` 作为导航。
+4. 页面内链统一使用 Wiki 链接格式（例如 `(Quick-Start)`），不要使用 raw URL。
 
 参考页面：
 

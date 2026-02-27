@@ -1,6 +1,6 @@
 # 系统架构
 
-## 总览
+## 全链路视图
 
 ```mermaid
 flowchart LR
@@ -17,21 +17,32 @@ flowchart LR
 
 ## 前端层
 
-- 运行时模式切换：`direct-http` / `cloudbase-anyservice`
-- 统一请求封装：`miniprogram/utils/request.js`
-- 自定义 TabBar 与全局搜索预取
+| 能力 | 说明 |
+| --- | --- |
+| 运行时模式切换 | `direct-http` / `cloudbase-anyservice` |
+| 请求统一封装 | `miniprogram/utils/request.js` |
+| 页面能力 | 自定义 TabBar、全局搜索预取 |
 
 ## 后端层
 
-- 单体 API 入口：`backend/src/index.js`
-- 模块方向：auth / users / papers / projects / lab / profile
-- LLM 调用策略：按模型池串行重试
+| 项目 | 说明 |
+| --- | --- |
+| API 入口 | `backend/src/index.js` |
+| 业务模块 | `auth / users / papers / projects / lab / profile` |
+| LLM 策略 | 模型池按优先级串行重试，命中即返回 |
 
 ## 数据层
 
-- PostgreSQL 为主存储
-- Redis 已部署（当前任务状态仍以内存 Map 为主）
+- 主存储：PostgreSQL。
+- Redis 已部署，但当前任务状态仍以内存 Map 为主（重启会丢失运行态任务）。
 
-## 异步能力
+## 异步任务模型
 
-- DataViz 和 Review Simulator 使用创建任务 + 轮询模式
+- DataViz：`创建任务 -> 轮询状态 -> 拉取结果`
+- Review Simulator：`创建任务 -> 轮询状态 -> 拉取结果`
+
+## 相关页面
+
+- 接口清单见 [后端 API 参考](API-Reference)
+- 运维命令见 [部署与运维](Deployment-and-Ops)
+- 常见异常见 [故障排查](Troubleshooting)
