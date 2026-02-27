@@ -2,7 +2,7 @@ const { request } = require("../../utils/request");
 const { getCurrentLanguage } = require("../../utils/language");
 
 const MIN_TEXT_LENGTH = 30;
-const MAX_TEXT_LENGTH = 20000;
+const MAX_TEXT_LENGTH = 2000;
 const RECENT_LIMIT = 10;
 
 function formatRecentTime(value, language) {

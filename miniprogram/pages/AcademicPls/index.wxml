@@ -35,6 +35,7 @@
     class="textarea"
     value="{{inputText}}"
     bindinput="onInputText"
+    maxlength="2000"
     placeholder="{{language === 'zh' ? '在此粘贴论文段落，例如：本研究探讨了……' : 'Paste your paragraph here. For example: This study investigates the effect of...'}}"
   />
 
