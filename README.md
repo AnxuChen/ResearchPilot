@@ -2,7 +2,9 @@
 
 面向科研场景的微信小程序产品：把文献探索、论文阅读、AI 学术工具、投稿管理放到一个工作流里。
 
-![Research Pilot](docs/img/tease.png)
+<p align="center">
+  <img src="docs/img/logo.png" alt="Research Pilot Logo" width="140" style="border-radius: 16px;" />
+</p>
 
 ## 为什么做这个产品
 
