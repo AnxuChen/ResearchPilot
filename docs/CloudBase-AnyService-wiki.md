@@ -1,132 +1,134 @@
-# CloudBase AnyService 落地指南（当前实现，2026-02-27）
+# CloudBase AnyService 使用报告（Wiki）
 
-本指南用于让微信小程序在预览/体验版稳定访问自建后端（无需先完成 ICP 备案域名改造）。
+- 文档类型：运行报告 / 运维 Wiki
+- 更新时间：2026-02-27
+- 适用范围：`ResearchPilot` 微信小程序（预览/体验链路）
 
-## 1. 目标与现状
+## 1. 背景
 
-当前项目支持两种 API 请求模式：
+本项目后端部署在自建服务器（`111.229.204.242`），为解决小程序预览/体验版对直连链路的限制，当前默认采用 **CloudBase AnyService** 转发到后端 API。
 
-- `direct-http`：本地开发/同网环境直连
-- `cloudbase-anyservice`：通过 `wx.cloud.callContainer` 访问后端（预览/体验推荐）
+## 2. 当前状态（Status）
 
-当前运行时配置文件：`miniprogram/config/runtime.js`
+- 总体状态：`ACTIVE`
+- 小程序请求模式：`cloudbase-anyservice`
+- 运行时默认值：`miniprogram/config/runtime.js`
+- 后端入口：`http://111.229.204.242:8081`（Nginx）
+- 健康检查：`/healthz`
 
-## 2. 已落地代码点
+## 3. 当前配置快照
 
-- 运行时配置：`miniprogram/config/runtime.js`
-- 小程序启动注入：`miniprogram/app.js`
-- 统一请求层：`miniprogram/utils/request.js`
-- 登录与业务页全部走统一 request 层
-
-## 3. 控制台配置步骤
-
-1. 确认小程序 AppID 与项目一致（当前为 `wxa79a767109f8d055`）。
-2. 在 CloudBase 创建/选择环境（记下 `env`）。
-3. 开启 AnyService，接入你的后端源站（CVM 或容器网关）：
-   - 协议：`HTTP`
-   - 地址：`111.229.204.242`
-   - 端口：`8081`
-   - 健康检查：`/healthz`
-4. 记录目标标识：
-   - `anyServiceName`（服务名方式）
-   - 或 `vmService`（CVM 标识方式）
-
-## 4. 小程序配置方式
-
-编辑 `miniprogram/config/runtime.js`：
+配置来源：`miniprogram/config/runtime.js`
 
 ```js
-const runtimeConfig = {
-  apiMode: "cloudbase-anyservice",
-  apiBaseUrl: "http://111.229.204.242:8081",
-  cloudbase: {
-    env: "你的CloudBase环境ID",
-    gatewayService: "tcbanyservice",
-    anyServiceName: "你的服务名", // anyServiceName / vmService 二选一
-    vmService: "",
-  },
-};
+apiMode: "cloudbase-anyservice"
+apiBaseUrl: "http://111.229.204.242:8081"
+cloudbase.env: "cloud1-9gx3r43j22f4cca1"
+cloudbase.gatewayService: "tcbanyservice"
+cloudbase.anyServiceName: "researchpilotapi"
+cloudbase.vmService: ""
 ```
 
 说明：
 
-- `anyServiceName` 与 `vmService` 至少填一个。
-- `env` 不能为空。
+- 当前使用 `anyServiceName` 路由（非 `vmService`）。
+- `direct-http` 仍保留在代码中用于本地联调，不作为默认线上模式。
 
-## 5. 请求链路
+## 4. 请求链路（Architecture）
 
 ```text
-Page -> utils/request.js
-     -> wx.cloud.callContainer(...)
-     -> AnyService gateway
-     -> Nginx(8081)
-     -> API(Express)
+Mini Program Page
+  -> miniprogram/utils/request.js
+  -> wx.cloud.callContainer
+  -> CloudBase AnyService Gateway
+  -> Nginx (111.229.204.242:8081)
+  -> API Container (Express)
 ```
 
-`utils/request.js` 会自动加：
+请求头注入逻辑（`utils/request.js`）：
 
 - `X-WX-SERVICE: tcbanyservice`
-- `X-AnyService-Name` 或 `X-Vm-Service`
+- `X-AnyService-Name: researchpilotapi`（当前生效）
+- 当 `vmService` 配置时改为 `X-Vm-Service`
 
-## 6. 验收清单
+## 5. 代码落地点（Code Map）
 
-1. 预览版扫码进入小程序。
-2. 登录（微信/邮箱）可成功。
-3. `LAB / PROJECTS / LIBRARY / PROFILE` 四个 tab 可正常请求数据。
-4. `Review Simulator`、`DataViz` 能创建任务并轮询状态。
+- 运行时配置：`miniprogram/config/runtime.js`
+- 小程序全局初始化：`miniprogram/app.js`
+- 网络层（AnyService/Direct 双通道）：`miniprogram/utils/request.js`
+- 业务页面请求（示例）：
+  - 登录：`miniprogram/pages/login/login.js`
+  - 文献流：`miniprogram/pages/explore/index.js`
+  - Lab 工具：`miniprogram/pages/AcademicPls|Citations|DataViz|review_simulator`
 
-## 7. 常见问题排查
+## 6. 验收结果（Current Verification）
 
-### 7.1 `cloudbase_env_not_configured`
+当前链路可支撑以下核心业务：
 
-- `runtime.js` 里没填 `cloudbase.env`。
+1. 登录链路（微信/邮箱）可用。
+2. 四个主 tab（LAB/PROJECTS/LIBRARY/PROFILE）接口可达。
+3. Review Simulator、DataViz 已改为异步任务模式，可规避长请求超时。
+4. 后端 `/healthz` 可通过 AnyService 链路访问。
 
-### 7.2 `anyservice_target_not_configured`
+## 7. 已知问题与处理
 
-- `anyServiceName` 和 `vmService` 都为空。
+### 7.1 `cloud.callContainer ... code 102002`
 
-### 7.3 登录/请求报网络异常
+- 原因：长请求超时（常见于大文件 AI 任务）。
+- 处理：改用异步任务接口（已落地）：
+  - Review：`POST /lab/review-simulator/tasks` + `GET /lab/review-simulator/tasks/:taskId`
+  - DataViz：`POST /lab/data-viz/tasks` + `GET /lab/data-viz/tasks/:taskId`
 
-优先检查：
+### 7.2 Citations 偶发 `format failed, please retry`
 
-- `http://111.229.204.242:8081/healthz` 是否可访问
-- AnyService 源站配置的 host/port/path 是否正确
-- 安全组与防火墙放通是否完整
+- 现象：客户端先超时断连（Nginx 可见 `499`）。
+- 原因：上游 LLM 慢响应 / 重试链路过长。
+- 处理建议：
+  - 校验 `LLM_API_KEY` 与模型可用性
+  - 控制 `CITATION_LLM_TIMEOUT_MS`
+  - 保持模型池优先级为稳定、低延迟模型
 
-### 7.4 `cloud.callContainer ... code: 102002`
+## 8. 运维操作（Runbook）
 
-这是长请求超时，优先改为异步接口：
-
-- Review：`POST /lab/review-simulator/tasks` + `GET /lab/review-simulator/tasks/:taskId`
-- DataViz：`POST /lab/data-viz/tasks` + `GET /lab/data-viz/tasks/:taskId`
-
-### 7.5 Citations 页面偶发 `format failed, please retry`
-
-- 常见原因是客户端先超时断开（Nginx 日志可能出现 `499`）。
-- 建议检查：
-  - LLM key 是否有效
-  - `LLM_BASE_URL` 与 `LLM_MODEL_POOL` 是否正确
-  - `CITATION_LLM_TIMEOUT_MS` 是否过高
-
-## 8. 与当前后端配置对齐项
-
-后端部署变量位于 `deploy/.env`，重点关注：
-
-- `LLM_API_KEY`
-- `LLM_BASE_URL`
-- `LLM_MODEL_POOL`
-- `CITATION_LLM_TIMEOUT_MS`
-- `OPENALEX_API_KEY`
-
-修改后需重启 API 容器：
+### 8.1 修改后端 LLM 配置并生效
 
 ```bash
-cd deploy
+cd /opt/research-pilot/deploy
+# 编辑 .env 后
 docker compose up -d --force-recreate api
 ```
 
-## 9. 建议
+### 8.2 健康检查
 
-1. 预览/体验阶段固定使用 `cloudbase-anyservice`。
-2. Review/DataViz 一律使用异步任务接口。
-3. 生产阶段如切换到独立 HTTPS 域名，可改回 `direct-http`（并保留 AnyService 作为备用链路）。
+```bash
+curl http://127.0.0.1:3005/healthz
+curl http://127.0.0.1:8081/healthz
+```
+
+### 8.3 查看容器与日志
+
+```bash
+docker ps
+docker logs --tail 100 rp-api
+docker logs --tail 100 rp-nginx
+```
+
+## 9. 风险与后续计划
+
+### 当前风险
+
+1. AnyService 仍受网关超时影响，长任务必须异步化。
+2. 业务高峰时，LLM 外部依赖波动会放大前端失败感知。
+
+### 后续计划
+
+1. 对关键慢接口完善超时预算与降级策略（特别是 Citations）。
+2. 将异步任务状态由内存 Map 演进为持久化（DB/队列）。
+3. 保留 AnyService 作为预览/体验主链路，后续可并行评估正式域名直连。
+
+## 10. 变更记录
+
+- 2026-02-27：
+  - 文档改写为 Wiki 报告体。
+  - 对齐当前运行配置（`anyServiceName=researchpilotapi`）。
+  - 补充故障场景、排查手册与后续计划。
