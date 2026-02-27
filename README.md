@@ -46,7 +46,7 @@ Research Pilot 聚焦研究生和科研初学者的高频动作：
 
 | 文献推荐 | 阅读详情 | DDL管理 | AI Lab |
 |---|---|---|---|
-| <img src="docs/img/explore.png" alt="Library" width="200"  | <img src="docs/img/reading.png" alt="Reading" width="200"  | <img src="docs/img/projects.png" alt="Projects" width="200"  | <img src="docs/img/lab.png" alt="Lab" width="200" |
+| <img src="docs/img/explore.png" alt="Library" width="200">  | <img src="docs/img/reading.png" alt="Reading" width="200">  | <img src="docs/img/projects.png" alt="Projects" width="200">  | <img src="docs/img/lab.png" alt="Lab" width="200"> |
 
 ## 技术架构
 
