@@ -44,12 +44,9 @@ Research Pilot 聚焦研究生和科研初学者的高频动作：
 
 ## 产品截图
 
-<p align="center">
-  <img src="docs/img/explore.png" alt="Library" width="200" />
-  <img src="docs/img/reading.png" alt="Reading" width="200" />
-  <img src="docs/img/projects.png" alt="Projects" width="200" />
-  <img src="docs/img/lab.png" alt="Lab" width="200" />
-</p>
+| 文献库 | 阅读详情 | 项目管理 | AI Lab |
+|---|---|---|---|
+| <img src="docs/img/explore.png" alt="Library" width="200" /><br/><sub>Library页面</sub> | <img src="docs/img/reading.png" alt="Reading" width="200" /><br/><sub>Reading页面</sub> | <img src="docs/img/projects.png" alt="Projects" width="200" /><br/><sub>Projects页面</sub> | <img src="docs/img/lab.png" alt="Lab" width="200" /><br/><sub>Lab页面</sub> |
 
 ## 技术架构
 
