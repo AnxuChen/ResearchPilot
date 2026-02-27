@@ -3,7 +3,7 @@
 面向科研场景的微信小程序产品：把文献探索、论文阅读、AI 学术工具、投稿管理放到一个工作流里。
 
 <p align="center">
-  <img src="docs/img/logo-rounded.png" alt="Research Pilot Logo" width="140" />
+  <img src="docs/img/logo-card.png" alt="Research Pilot Logo Card" width="190" />
 </p>
 
 <p align="center">
@@ -41,10 +41,10 @@ Research Pilot 聚焦研究生和科研初学者的高频动作：
 ## 产品截图
 
 <p align="center">
-  <img src="docs/img/explore.png" alt="Library" width="220" />
-  <img src="docs/img/reading.png" alt="Reading" width="220" />
-  <img src="docs/img/projects.png" alt="Projects" width="220" />
-  <img src="docs/img/lab.png" alt="Lab" width="220" />
+  <img src="docs/img/explore.png" alt="Library" width="200" />
+  <img src="docs/img/reading.png" alt="Reading" width="200" />
+  <img src="docs/img/projects.png" alt="Projects" width="200" />
+  <img src="docs/img/lab.png" alt="Lab" width="200" />
 </p>
 
 ## 技术架构
