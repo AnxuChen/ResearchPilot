@@ -14,6 +14,7 @@
 - `Home.md`
 - `Product-Overview.md`
 - `Quick-Start.md`
+- `Frontend-Implementation.md`
 - `Architecture.md`
 - `API-Reference.md`
 - `Deployment-and-Ops.md`

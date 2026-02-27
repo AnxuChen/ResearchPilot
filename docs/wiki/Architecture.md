@@ -23,6 +23,8 @@ flowchart LR
 | 请求统一封装 | `miniprogram/utils/request.js` |
 | 页面能力 | 自定义 TabBar、全局搜索预取 |
 
+前端详细实现见：[前端实现说明](Frontend-Implementation)。
+
 ## 后端层
 
 | 项目 | 说明 |
@@ -43,6 +45,7 @@ flowchart LR
 
 ## 相关页面
 
+- 前端细节见 [前端实现说明](Frontend-Implementation)
 - 接口清单见 [后端 API 参考](API-Reference)
 - 运维命令见 [部署与运维](Deployment-and-Ops)
 - 常见异常见 [故障排查](Troubleshooting)

@@ -86,73 +86,44 @@ Tab 页（自定义 TabBar）：
 
 ## 核心页面实现
 
-## 1) Auth: login/register/wx_profile_setup
+### 1) Auth: login/register/wx_profile_setup
 
 - `login` 支持邮箱登录与微信登录（`/auth/email-login`、`/auth/wx-login`）。
 - 微信登录请求失败时包含一次 `502` 重试逻辑。
 - `register` 调用 `/auth/email-register` 并在成功后写入登录态。
 - `wx_profile_setup` 调用 `/users/me/profile` 提交昵称与头像（base64 data URL）。
 
-## 2) Library: explore/explore_Card/paper/detail
+### 2) Library: explore/explore_Card/paper/detail
 
 - `explore` 使用双列瀑布流分栏（`splitColumns`）。
 - 支持关键词检索、下拉刷新、点赞切换。
 - `explore_Card` 是同源数据的卡片化展示模式。
-- `paper/detail` 集成：
-  - 论文详情读取 `/papers/:id`
-  - 评论列表/发评/点赞评论
-  - 收藏切换 `/papers/:id/like`
-  - 阅读打点 `/papers/:id/action`（`READ`）
-  - AI 阅读 `/papers/:id/ai-reading`（含重试入口）
+- `paper/detail` 集成论文详情、评论、收藏、阅读打点和 AI 阅读能力。
 
-## 3) Projects
+### 3) Projects
 
 - 页面接口：`/projects/conferences`（GET/POST/PATCH/DELETE）。
-- 数据处理：
-  - 本地计算 `deadline` 剩余天数并排序。
-  - 过滤掉已过期会议卡片。
-- 交互实现：
-  - 右上角“添加”按钮打开同一弹窗。
-  - 弹窗支持新增/编辑/删除。
-  - 表单含日期、进度、颜色主题、备注等字段校验。
+- 本地计算 `deadline` 剩余天数并排序，过滤已过期会议卡片。
+- 右上角“添加”按钮与卡片点击都进入同一编辑弹窗，支持新增/编辑/删除。
+- 表单包含日期、进度、颜色主题、备注等字段校验。
 
-## 4) Lab 工具页
+### 4) Lab 工具页
 
 同步工具：
 
-- `AcademicPls`
-  - 输入限制：30-2000 字符。
-  - 接口：`POST /lab/academic-pls`
-  - 最近记录：`GET/DELETE /lab/academic-pls/recent/*`
-- `Citations`
-  - 输入上限：500 字符。
-  - 风格支持：`APA7`、`MLA9`、`CHICAGO`、`AUTO`
-  - 接口：`POST /lab/citations/format`
-  - 最近记录：`GET/DELETE /lab/citations/recent/*`
+- `AcademicPls`：输入限制 30-2000 字符；接口 `POST /lab/academic-pls`；支持最近记录 `GET/DELETE /lab/academic-pls/recent/*`。
+- `Citations`：输入上限 500 字符；支持 `APA7/MLA9/CHICAGO/AUTO`；接口 `POST /lab/citations/format`；支持最近记录 `GET/DELETE /lab/citations/recent/*`。
 
 异步工具（任务 + 轮询）：
 
-- `DataViz`
-  - 允许上传 `csv/json/xls/xlsx`，最大 50MB。
-  - 文件先上传云存储，后调用 `/lab/data-viz/tasks` 创建任务。
-  - 轮询 `/lab/data-viz/tasks/:taskId`。
-  - 成功后渲染简化 Canvas 图表；Heatmap 当前只显示提示与配置文本。
-- `review_simulator`
-  - 允许上传 `pdf/txt/md`，最大 50MB。
-  - 创建任务 `/lab/review-simulator/tasks` + 轮询状态接口。
-  - 支持最近记录加载与删除。
+- `DataViz`：上传 `csv/json/xls/xlsx`（最大 50MB）后创建任务并轮询结果，成功后渲染简化 Canvas 图表。
+- `review_simulator`：上传 `pdf/txt/md`（最大 50MB）后创建任务并轮询，支持历史结果加载与删除。
 
-## 5) Profile/profile_settings
+### 5) Profile/profile_settings
 
 - `profile` 展示用户信息与收藏论文（`/users/me/liked-papers`）。
-- `profile_settings` 支持：
-  - 昵称编辑
-  - 徽章样式与文案（带本地偏好缓存）
-  - 语言切换
-  - 头像压缩后转 base64 上传
-- 本地偏好 key：
-  - `profile_badge_preferences_v1`
-  - `profile_local_preferences_v1`
+- `profile_settings` 支持昵称编辑、徽章样式与文案、语言切换、头像压缩后转 base64 上传。
+- 本地偏好 key：`profile_badge_preferences_v1`、`profile_local_preferences_v1`。
 
 ## 前端工程特征与注意点
 
