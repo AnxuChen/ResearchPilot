@@ -14,12 +14,13 @@ const wechatAppId = process.env.WECHAT_APP_ID || "";
 const wechatAppSecret = process.env.WECHAT_APP_SECRET || "";
 const openAlexApiKey = process.env.OPENALEX_API_KEY || "";
 const DEFAULT_LLM_MODEL_POOL = [
-  "gpt-5.2-chat-latest",
-  "minimax-m2.5",
-  "gpt-5",
+  "MiniMax/MiniMax-M2.5",
+  "moonshotai/Kimi-K2.5",
+  "ZhipuAI/GLM-5",
+  "Qwen/Qwen3.5-397B-A17B",
 ];
 const llmApiKey = process.env.LLM_API_KEY || "";
-const llmBaseUrl = process.env.LLM_BASE_URL || "https://api.chatanywhere.tech/";
+const llmBaseUrl = process.env.LLM_BASE_URL || "https://api-inference.modelscope.cn";
 const configuredLlmModelPool = parseLlmModelPool(process.env.LLM_MODEL_POOL || "");
 const legacyReviewModelName = String(process.env.REVIEW_MODEL_NAME || "").trim();
 const llmModelPool = configuredLlmModelPool.length
@@ -62,7 +63,7 @@ const SUPPORTED_DATAVIZ_EXTENSIONS = new Set(["csv", "json", "xls", "xlsx"]);
 const SUPPORTED_DATAVIZ_CHART_TYPES = new Set(["line", "bar", "scatter", "heatmap"]);
 const MAX_DATAVIZ_SAMPLE_ROWS = 220;
 const MAX_DATAVIZ_COLUMNS = 24;
-const MAX_ACADEMIC_TEXT_CHARS = 2000;
+const MAX_ACADEMIC_TEXT_CHARS = 20000;
 const MAX_CITATION_TEXT_CHARS = 12000;
 const ALLOWED_REMOTE_HOST_SUFFIXES = [".myqcloud.com", ".tcb.qcloud.la"];
 const REVIEW_TASK_TTL_MS = 2 * 60 * 60 * 1000;
