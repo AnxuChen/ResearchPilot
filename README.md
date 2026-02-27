@@ -7,11 +7,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Build-Ready-2ea44f?style=for-the-badge" alt="Build Ready" />
   <img src="https://img.shields.io/badge/Release-v2026.2.27-0ea5e9?style=for-the-badge" alt="Release v2026.2.27" />
   <img src="https://img.shields.io/badge/WeChat-Mini%20Program-07c160?style=for-the-badge" alt="WeChat Mini Program" />
   <img src="https://img.shields.io/badge/API-Node.js%2020-3c873a?style=for-the-badge" alt="API Node.js 20" />
   <img src="https://img.shields.io/badge/License-MIT-0284c7?style=for-the-badge" alt="MIT License" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/bmh201708/ResearchPilot/wiki">Project Wiki</a>
 </p>
 
 ## 为什么做这个产品
@@ -37,9 +40,12 @@ Research Pilot 聚焦研究生和科研初学者的高频动作：
 
 ## 产品截图
 
-| Library | Reading | Projects | Lab |
-|---|---|---|---|
-| ![Library](docs/img/explore.png) | ![Reading](docs/img/reading.png) | ![Projects](docs/img/projects.png) | ![Lab](docs/img/lab.png) |
+<p align="center">
+  <img src="docs/img/explore.png" alt="Library" width="220" />
+  <img src="docs/img/reading.png" alt="Reading" width="220" />
+  <img src="docs/img/projects.png" alt="Projects" width="220" />
+  <img src="docs/img/lab.png" alt="Lab" width="220" />
+</p>
 
 ## 技术架构
 
@@ -125,7 +131,7 @@ curl http://127.0.0.1:8081/healthz
   - `/lab/data-viz/tasks`
   - `/lab/review-simulator/tasks`
 
-详细接口见：`docs/后端联调接口说明.md`
+详细接口见：`docs/后端技术架构规划.md`
 
 ## 文档与 Wiki
 
