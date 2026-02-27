@@ -19,9 +19,23 @@ page {
   .brand-icon { width: 60rpx; height: 60rpx; background-color: #00dbb5; border-radius: 16rpx; display: flex; align-items: center; justify-content: center; }
   .calendar-icon { width: 24rpx; height: 24rpx; border: 4rpx solid white; border-radius: 4rpx; }
   .brand-text { font-size: 24rpx; font-weight: 700; letter-spacing: 2rpx; color: #00dbb5; text-transform: uppercase; }
-  .menu-btn { width: 80rpx; height: 80rpx; background: white; border-radius: 24rpx; box-shadow: 0 10rpx 20rpx rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8rpx; }
-  .line { width: 32rpx; height: 4rpx; background: #333; border-radius: 4rpx; }
-  .line-2 { width: 24rpx; transform: translateX(4rpx); }
+  .menu-btn {
+    min-width: 124rpx;
+    height: 80rpx;
+    padding: 0 24rpx;
+    background: white;
+    border-radius: 24rpx;
+    box-shadow: 0 10rpx 20rpx rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .menu-btn-text {
+    font-size: 26rpx;
+    font-weight: 700;
+    color: #2563eb;
+    letter-spacing: 1rpx;
+  }
   
   /* --- 大标题 --- */
   .page-header { width: 100%; margin-bottom: 48rpx; text-align: left; }
@@ -91,24 +105,6 @@ page {
   .orange-pill { background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5; }
   .orange-bg { background: #f97316; }
 
-  /* ===== 添加按钮 ===== */
-.add-btn {
-    position: fixed;
-    bottom: 60rpx;
-    right: 60rpx;
-    width: 100rpx;
-    height: 100rpx;
-    background: #2563EB;
-    color: white;
-    font-size: 60rpx;
-    font-weight: bold;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 12rpx 30rpx rgba(0,0,0,0.2);
-  }
-  
  /* ===== 背景遮罩 ===== */
 .modal-mask {
   position: fixed;
@@ -132,7 +128,8 @@ page {
     display: flex;
     flex-direction: column;
     box-shadow: 0 -10rpx 40rpx rgba(0,0,0,0.15);
-    padding-bottom: env(safe-area-inset-bottom); /* 适配全面屏底部黑条 */
+    /* Reserve space above custom tab bar so footer actions are not occluded. */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 140rpx);
   }
 
 /* ===== Header ===== */
@@ -282,6 +279,7 @@ page {
     padding: 24rpx 40rpx;
     border-top: 1px solid #f0f0f0;
     background: #fff;
+    margin-bottom: 8rpx;
   }
 
 .save-btn {
