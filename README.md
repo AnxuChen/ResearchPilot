@@ -139,18 +139,6 @@ curl http://127.0.0.1:8081/healthz
   - `apiMode: "direct-http"`
   - `apiBaseUrl: "http://111.229.204.242:8081"`
 
-## 线上部署现状（2026-02-27 已核对）
-
-已通过 SSH 登录 `root@111.229.204.242` 核对（部署目录：`/opt/research-pilot`）：
-
-- 运行容器：
-  - `rp-nginx`（`0.0.0.0:8081->80`）
-  - `rp-api`（`127.0.0.1:3005->3000`）
-  - `rp-postgres`（`127.0.0.1:5433->5432`）
-- 健康检查：
-  - `http://127.0.0.1:3005/healthz` 返回 `status: ok`
-  - `http://127.0.0.1:8081/healthz` 返回 `status: ok`
-
 ## 核心环境变量
 
 - `DATABASE_URL`：PostgreSQL 连接串
@@ -161,14 +149,7 @@ curl http://127.0.0.1:8081/healthz
 - `DEFAULT_FEED_KEYWORDS`
 - `CITATION_LLM_TIMEOUT_MS`、`LLM_TIMEOUT_MS`、`LLM_PER_MODEL_TIMEOUT_MS`
 
-## 常见问题
-
-- 预览环境可打开但接口失败：检查 `runtime.js` 的 AnyService 配置是否完整
-- AnyService 长请求超时：使用异步任务接口（DataViz、Review Simulator）
-- 微信登录后反复要求完善资料：检查数据库中昵称/头像是否成功写入
-
 ## 相关文档
 
-- `docs/后端联调接口说明.md`
 - `docs/后端技术架构规划.md`
-- `docs/CloudBase-AnyService落地指南.md`
+- `docs/CloudBase-AnyService-wiki.md`

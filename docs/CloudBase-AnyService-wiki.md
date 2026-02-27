@@ -129,6 +129,5 @@ docker logs --tail 100 rp-nginx
 ## 10. 变更记录
 
 - 2026-02-27：
-  - 文档改写为 Wiki 报告体。
   - 对齐当前运行配置（`anyServiceName=researchpilotapi`）。
   - 补充故障场景、排查手册与后续计划。
