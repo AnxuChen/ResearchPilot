@@ -14,13 +14,12 @@ const wechatAppId = process.env.WECHAT_APP_ID || "";
 const wechatAppSecret = process.env.WECHAT_APP_SECRET || "";
 const openAlexApiKey = process.env.OPENALEX_API_KEY || "";
 const DEFAULT_LLM_MODEL_POOL = [
-  "MiniMax/MiniMax-M2.5",
-  "moonshotai/Kimi-K2.5",
-  "ZhipuAI/GLM-5",
-  "Qwen/Qwen3.5-397B-A17B",
+  "gpt-5.2-chat-latest",
+  "minimax-m2.5",
+  "gpt-5",
 ];
 const llmApiKey = process.env.LLM_API_KEY || "";
-const llmBaseUrl = process.env.LLM_BASE_URL || "https://api-inference.modelscope.cn";
+const llmBaseUrl = process.env.LLM_BASE_URL || "https://api.chatanywhere.tech/";
 const configuredLlmModelPool = parseLlmModelPool(process.env.LLM_MODEL_POOL || "");
 const legacyReviewModelName = String(process.env.REVIEW_MODEL_NAME || "").trim();
 const llmModelPool = configuredLlmModelPool.length
