@@ -60,7 +60,6 @@ flowchart LR
   B --> C["Nginx (8081)"]
   C --> D["Node.js + Express API (3005 -> 3000)"]
   D --> E["PostgreSQL 16 (5433 -> 5432)"]
-  D --> F["Redis 7 (6380 -> 6379)"]
   D --> G["OpenAlex API"]
   D --> H["LLM Provider (OpenAI-compatible /v1/chat/completions)"]
 ```
@@ -83,9 +82,9 @@ flowchart LR
 
 ### 部署（`deploy/`）
 
-- Docker Compose 编排：`nginx`、`api`、`postgres`、`redis`
+- Docker Compose 编排：`nginx`、`api`、`postgres`
 - Nginx 反向代理 + 健康检查
-- API/DB/Redis 仅绑定本机回环，公网仅开放 Nginx 入口
+- API/DB 仅绑定本机回环，公网仅开放 Nginx 入口
 
 ## 项目结构
 
@@ -148,7 +147,6 @@ curl http://127.0.0.1:8081/healthz
   - `rp-nginx`（`0.0.0.0:8081->80`）
   - `rp-api`（`127.0.0.1:3005->3000`）
   - `rp-postgres`（`127.0.0.1:5433->5432`）
-  - `rp-redis`（`127.0.0.1:6380->6379`）
 - 健康检查：
   - `http://127.0.0.1:3005/healthz` 返回 `status: ok`
   - `http://127.0.0.1:8081/healthz` 返回 `status: ok`
