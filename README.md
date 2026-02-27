@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/img/research-pilot-pill.svg" alt="Research Pilot V1.0" width="300" />
+  <img src="docs/img/research-pilot-pill.svg" alt="Research Pilot V1.0" width="240" />
 </p>
 
 <p align="center">
@@ -138,7 +138,5 @@ curl http://127.0.0.1:8081/healthz
 详细接口见：`docs/后端技术架构规划.md`
 
 ## 文档与 Wiki
-
-- 架构说明：`docs/后端技术架构规划.md`
-- AnyService 报告：`docs/CloudBase-AnyService-wiki.md`
-- Wiki 草稿目录：`docs/wiki/`
+- 部分文档: `docs/`
+- Wiki目录：`docs/wiki/`
