@@ -1,118 +1,65 @@
 # Research Pilot
 
-面向科研场景的微信小程序，提供文献探索、论文阅读、AI 学术工具与投稿进度管理能力。
+面向科研场景的微信小程序产品：把文献探索、论文阅读、AI 学术工具、投稿管理放到一个工作流里。
 
-<p align="center">
-  <img src="docs/img/tease.png" alt="Research Pilot Tease" width="420" style="border-radius: 16px;" />
-</p>
+![Research Pilot](docs/img/tease.png)
 
-## 产品介绍
+## 为什么做这个产品
 
-Research Pilot 聚焦研究生与科研初学者的高频任务，把“找文献、读文献、整理引用、润色文本、模拟审稿、跟踪会议截止日期”整合到一个小程序里。  
-前端为微信小程序，后端为 Node.js API + PostgreSQL，支持通过 CloudBase AnyService 从小程序预览环境访问自建后端。
+Research Pilot 聚焦研究生和科研初学者的高频动作：
 
-当前后端线上部署在云服务器 `111.229.204.242`，对外入口为：
+1. 找文献：检索、筛选、收藏、标记阅读状态。
+2. 读文献：快速查看摘要、评论互动、生成 AI Reading。
+3. 写论文：AcademicPls 润色、Citations 引用格式化。
+4. 做分析：DataViz 上传数据快速生成图表和洞察。
+5. 管投稿：Projects 里管理会议卡片、截止日期与进度。
 
-- `http://111.229.204.242:8081`
+## 功能概览
 
-## 功能模块
+| 模块 | 能力 |
+|---|---|
+| Auth | 微信登录、邮箱注册登录、JWT 鉴权 |
+| Library | 论文流检索（OpenAlex）、收藏、阅读标记 |
+| Paper Detail | 评论、评论点赞、AI 阅读摘要 |
+| Projects | 会议卡片新增/编辑/删除、倒计时和进度 |
+| Lab | AcademicPls / Citations / DataViz / Review Simulator |
+| Profile | 收藏列表、语言偏好、徽章与个人资料 |
 
-### 1) 账号与资料
+## 产品截图
 
-- 微信登录（`/auth/wx-login`）+ 邮箱注册/登录（`/auth/email-register`、`/auth/email-login`）
-- JWT 鉴权，统一 `Authorization: Bearer <token>`
-- 微信首登资料完善（昵称、头像）
-- 个人设置：语言偏好（中英）、徽章样式、头像昵称
-
-### 2) 文献库（Library）
-
-- 论文流检索与推荐（`/papers/feed`）
-- 关键词搜索、瀑布流/卡片流浏览
-- 收藏/取消收藏（`/papers/:id/like`）
-- OpenAlex 拉取失败时自动回退本地缓存
-
-### 3) 论文详情与互动
-
-- 论文详情、作者、标签、引用数、跳转链接
-- 阅读行为记录（`PASS | MARK | READ`）
-- 评论发布、按时间/热度排序、评论点赞
-- AI Reading：生成三行阅读摘要（LLM 不可用时自动降级为规则摘要）
-
-### 4) Projects（投稿进度）
-
-- 会议 Deadline 列表与倒计时
-- 默认会议模板自动初始化（首次登录）
-- 会议条目增删改（简称、全称、日期、进度、主题色、备注）
-
-### 5) Lab（AI 工具）
-
-- `Academic PLS`：学术文本润色
-- `Citations`：参考文献格式化（APA7 / MLA9 / Chicago / Auto）
-- `DataViz`：上传 CSV/JSON/XLS/XLSX，异步生成图表与洞察
-- `Review Simulator`：上传 PDF/TXT/MD，异步生成审稿意见（结论、评分、优劣势、建议）
-- 各工具支持 Recent 历史记录（查询/删除）
+| Library | Reading | Projects | Lab |
+|---|---|---|---|
+| ![Library](docs/img/explore.png) | ![Reading](docs/img/reading.png) | ![Projects](docs/img/projects.png) | ![Lab](docs/img/lab.png) |
 
 ## 技术架构
 
 ```mermaid
 flowchart LR
   A["WeChat Mini Program"] --> B["Request Layer (direct-http / cloudbase-anyservice)"]
-  B --> C["Nginx (8081)"]
-  C --> D["Node.js + Express API (3005 -> 3000)"]
-  D --> E["PostgreSQL 16 (5433 -> 5432)"]
-  D --> G["OpenAlex API"]
-  D --> H["LLM Provider (OpenAI-compatible /v1/chat/completions)"]
+  B --> C["CloudBase AnyService (preview/experience)"]
+  B --> D["Direct HTTP (local debug)"]
+  C --> E["Nginx :8081"]
+  D --> E
+  E --> F["Express API :3000"]
+  F --> G["PostgreSQL"]
+  F --> H["OpenAlex"]
+  F --> I["LLM Provider (OpenAI-compatible)"]
 ```
 
-### 前端（`miniprogram/`）
-
-- 微信小程序原生框架
-- 自定义 TabBar 与统一请求层（`miniprogram/utils/request.js`）
-- 运行时双通道：
-  - `direct-http`：本地/直连调试
-  - `cloudbase-anyservice`：小程序预览/体验版推荐
-
-### 后端（`backend/`）
-
-- Node.js + Express
-- PostgreSQL 读写（用户、论文、评论、点赞、项目截止时间、Lab 历史记录）
-- JWT 鉴权 + 微信 `code2session`
-- AI 能力统一走模型池与超时/回退策略
-- `Review Simulator`、`DataViz` 使用异步任务（内存 Map + TTL）
-
-### 部署（`deploy/`）
-
-- Docker Compose 编排：`nginx`、`api`、`postgres`
-- Nginx 反向代理 + 健康检查
-- API/DB 仅绑定本机回环，公网仅开放 Nginx 入口
-
-## 项目结构
+## 当前代码结构
 
 ```text
 ResearchPilot/
-  miniprogram/         # 微信小程序前端
-  backend/             # Node.js API 服务
-  deploy/              # Docker Compose 与 Nginx 配置
-  docs/                # 架构、联调、落地文档
-  cloudfunctions/      # 云开发示例/扩展代码
+  miniprogram/      # 微信小程序前端
+  backend/          # Node.js + Express 后端
+  deploy/           # Docker Compose + Nginx
+  docs/             # 项目文档与 wiki 草稿
+  cloudfunctions/   # 云开发示例代码
 ```
 
-## 关键接口分组
+## 快速开始
 
-- 认证：`/auth/*`
-- 用户：`/users/me`、`/users/me/profile`、`/users/me/liked-papers`
-- 论文：`/papers/feed`、`/papers/:id`、`/papers/:id/action`、`/papers/:id/like`
-- 评论：`/papers/:id/comments`、`/papers/:id/comments/:commentId/like`
-- 个人中心：`/profile/dashboard`
-- Lab：
-  - `Academic PLS`：`/lab/academic-pls`
-  - `Citations`：`/lab/citations/format`
-  - `DataViz`：`/lab/data-viz/tasks`（异步）
-  - `Review Simulator`：`/lab/review-simulator/tasks`（异步）
-
-## 快速启动
-
-### 1) 后端服务启动
+### 1) 启动后端（Docker）
 
 ```bash
 cp deploy/.env.example deploy/.env
@@ -127,29 +74,64 @@ curl http://127.0.0.1:3005/healthz
 curl http://127.0.0.1:8081/healthz
 ```
 
-### 3) 小程序运行配置
+### 3) 配置小程序运行模式
 
 编辑 `miniprogram/config/runtime.js`：
 
-- AnyService（推荐）：
+- 预览/体验推荐：
   - `apiMode: "cloudbase-anyservice"`
-  - `cloudbase.env`
-  - `cloudbase.anyServiceName` 或 `cloudbase.vmService` 二选一
-- 直连调试：
+  - 配置 `cloudbase.env`
+  - 配置 `anyServiceName` 或 `vmService`
+
+- 本地调试可用：
   - `apiMode: "direct-http"`
-  - `apiBaseUrl: "http://111.229.204.242:8081"`
+  - `apiBaseUrl: "http://<ip>:<port>"`
 
-## 核心环境变量
+## 核心配置项
 
-- `DATABASE_URL`：PostgreSQL 连接串
-- `JWT_SECRET`：JWT 签名密钥
-- `WECHAT_APP_ID`、`WECHAT_APP_SECRET`：微信登录凭据
-- `LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL_POOL`
-- `OPENALEX_API_KEY`（可选）
-- `DEFAULT_FEED_KEYWORDS`
-- `CITATION_LLM_TIMEOUT_MS`、`LLM_TIMEOUT_MS`、`LLM_PER_MODEL_TIMEOUT_MS`
+后端环境变量位于 `deploy/.env`：
 
-## 相关文档
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `WECHAT_APP_ID` / `WECHAT_APP_SECRET`
+- `OPENALEX_API_KEY`
+- `LLM_API_KEY`
+- `LLM_BASE_URL`
+- `LLM_MODEL_POOL`
+- `LLM_TIMEOUT_MS`
+- `LLM_PER_MODEL_TIMEOUT_MS`
+- `CITATION_LLM_TIMEOUT_MS`
 
-- `docs/后端技术架构规划.md`
-- `docs/CloudBase-AnyService-wiki.md`
+## API 概览
+
+- Auth：`/auth/wx-login`、`/auth/email-register`、`/auth/email-login`
+- Users：`/users/me`、`/users/me/profile`、`/users/me/liked-papers`
+- Papers：`/papers/feed`、`/papers/:id`、`/papers/:id/action`、`/papers/:id/like`
+- Comments：`/papers/:id/comments`、`/papers/:id/comments/:commentId/like`
+- Projects：`/projects/conferences`（GET/POST/PATCH/DELETE）
+- Lab：
+  - `/lab/academic-pls`
+  - `/lab/citations/format`
+  - `/lab/data-viz/tasks`
+  - `/lab/review-simulator/tasks`
+
+详细接口见：`docs/后端联调接口说明.md`
+
+## 已知限制
+
+1. DataViz / Review Simulator 的任务状态当前以内存存储，容器重启后任务状态会丢失。
+2. Citations 依赖外部 LLM，模型慢响应时可能出现前端超时体验。
+3. 后端目前为单体入口文件，后续会逐步模块化拆分。
+
+## 文档与 Wiki
+
+- 架构说明：`docs/后端技术架构规划.md`
+- AnyService 报告：`docs/CloudBase-AnyService-wiki.md`
+- Wiki 草稿目录：`docs/wiki/`
+
+## Roadmap
+
+1. 异步任务持久化（DB/队列）。
+2. 后端模块化拆分（auth/papers/lab/projects/profile）。
+3. 接口测试与回归测试补齐。
+4. 运行监控与错误告警完善。
