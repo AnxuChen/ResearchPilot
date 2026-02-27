@@ -3,7 +3,11 @@
 面向科研场景的微信小程序产品：把文献探索、论文阅读、AI 学术工具、投稿管理放到一个工作流里。
 
 <p align="center">
-  <img src="docs/img/logo-card.png" alt="Research Pilot Logo Card" width="190" />
+  <img src="docs/img/logo-rounded.png" alt="Research Pilot Logo" width="150" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/%20%E2%97%8F%20RESEARCH%20PILOT%20V1.0-f4f7fb?style=for-the-badge&labelColor=f4f7fb&color=f4f7fb" alt="Research Pilot V1.0" />
 </p>
 
 <p align="center">
