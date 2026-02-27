@@ -11,10 +11,10 @@
 
 ## 2. 已完成的代码改造
 
-- 新增运行时配置：`/Users/jimjimu/Documents/GitHub/ResearchPilot/miniprogram-7/miniprogram/config/runtime.js`
-- 小程序启动配置改造：`/Users/jimjimu/Documents/GitHub/ResearchPilot/miniprogram-7/miniprogram/app.js`
-- 统一请求层支持 AnyService：`/Users/jimjimu/Documents/GitHub/ResearchPilot/miniprogram-7/miniprogram/utils/request.js`
-- 微信登录改为走统一请求层：`/Users/jimjimu/Documents/GitHub/ResearchPilot/miniprogram-7/miniprogram/pages/login/login.js`
+- 新增运行时配置：`miniprogram/config/runtime.js`
+- 小程序启动配置改造：`miniprogram/app.js`
+- 统一请求层支持 AnyService：`miniprogram/utils/request.js`
+- 微信登录改为走统一请求层：`miniprogram/pages/login/login.js`
 
 ## 3. 控制台配置步骤
 
@@ -32,7 +32,7 @@
 
 ## 4. 小程序配置
 
-编辑 `/Users/jimjimu/Documents/GitHub/ResearchPilot/miniprogram-7/miniprogram/config/runtime.js`：
+编辑 `miniprogram/config/runtime.js`：
 
 ```js
 const runtimeConfig = {
