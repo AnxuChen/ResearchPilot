@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/%20%E2%97%8F%20RESEARCH%20PILOT%20V1.0-f4f7fb?style=for-the-badge&labelColor=f4f7fb&color=f4f7fb" alt="Research Pilot V1.0" />
+  <img src="docs/img/research-pilot-pill.svg" alt="Research Pilot V1.0" width="300" />
 </p>
 
 <p align="center">
